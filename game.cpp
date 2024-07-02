@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <cassert>
+#include <cmath>
 #include "game.h"
+#include <vector>
+#include <utility>
 
 Game::Game()
 {
@@ -256,15 +259,10 @@ bool Game::movePacmanForwardWithCollision()
 {
   bool success = true;
   
-  // Move PACMAN forward without worrying about collision.
+  // First try move PACMAN forward without worrying about collision.
   pacman_->moveForward();
   
-  // TODO: Check if crashed into ghost!
-  assert(!"TODO: Check if crashed into ghost!");
-  // if PACMAN has power, then will eat the ghost.
-  // else, PACMAN loses and game over.
-  
-  // Which tile is the center of this actor now on?
+  // Which tile is the center of PACMAN now on?
   int pacmanX = (pacman_->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
   int pacmanY = (pacman_->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
   TileType tile;
@@ -306,9 +304,50 @@ bool Game::movePacmanForwardWithCollision()
     }
   }
   
-  // If any of the tiles are walls, reverse PACMAN.
   if (!success) {
+    // If any of the tiles are walls, reverse PACMAN.
     pacman_->moveBackward();
+  } else {
+    // TODO: Successfully moved. Check if crashed into a ghost!
+//    assert(!"TODO: Check if crashed into ghost!");
+  }
+  
+  return success;
+}
+
+bool Game::moveGhostForwardWithCollision(Actor *ghost)
+{
+  bool success = true;
+  
+  // Move this ghost forward without worrying about collision.
+  ghost->moveForward();
+  
+  // Which tile is the center of this ghost now on?
+  int ghostX = (ghost->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
+  int ghostY = (ghost->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
+  TileType tile;
+
+  // Get all the tiles surrounding that tile.
+  for (int i = -1; i <= 1; i++) {
+    for (int j = -1; j <= 1; j++) {
+      // And check if any are walls.
+      tile = board_[ghostX + i][ghostY + j];
+      if (isCollidingWithTile(ghost, ghostX + i, ghostY + j)) {
+        // Resolve collision.
+        if (tile == TILE_WALL) {
+          success = false;
+          break;
+        }
+      }
+    }
+  }
+  
+  if (!success) {
+    // If any of the tiles are walls, reverse this ghost.
+    ghost->moveBackward();
+  } else {
+    // TODO: Successfully moved. Check if crashed into PACMAN!
+//    assert(!"TODO: Check if crashed into PACMAN!");
   }
   
   return success;
@@ -337,10 +376,45 @@ bool Game::update(Direction newDirection)
   
   /* Then move the ghosts. */
   
-  // TODO: Moving Blinky.
-  assert(!"TODO: Move Blinky!");
-  
-  moveGhostForwardWithCollision(blinky_);
+  // Moving Blinky, target is where PACMAN is.
+  int blinkyTileX = (blinky_->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
+  int blinkyTileY = (blinky_->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
+  int targetTileX = (pacman_->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
+  int targetTileY = (pacman_->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
+
+  if (blinky_->getX() == blinkyTileX * TILE_SIZE &&
+      blinky_->getY() == blinkyTileY * TILE_SIZE) {
+    // Blinky is exactly in the tile it is in.
+    // Decide which tile Blinky will go to next.
+    oldDirection = blinky_->getDirection();
+    std::vector<std::pair<float, Direction>> directions;
+    int dx[4] = { 0, 0, -1, 1 };
+    int dy[4] = { -1, 1, 0, 0 };
+    for (int i = 0; i < 4; i++) {
+      float distanceFromAdjacentTile =
+        sqrt(pow(blinkyTileX + dx[i] - targetTileX, 2) +
+             pow(blinkyTileY + dy[i] - targetTileY, 2));
+      if (i == 0 && oldDirection != DIRECTION_DOWN) {
+        newDirection = DIRECTION_UP;
+      } else if (i == 1 && oldDirection != DIRECTION_UP) {
+        newDirection = DIRECTION_DOWN;
+      } else if (i == 2 && oldDirection != DIRECTION_RIGHT) {
+        newDirection = DIRECTION_LEFT;
+      } else if (i == 3 && oldDirection != DIRECTION_LEFT) {
+        newDirection = DIRECTION_RIGHT;
+      }
+      directions.push_back(std::make_pair(distanceFromAdjacentTile, newDirection));
+    }
+    std::sort(directions.begin(), directions.end());
+    for (auto vit = directions.begin(); vit != directions.end(); vit++) {
+      blinky_->setDirection(vit->second);
+      if (moveGhostForwardWithCollision(blinky_)) {
+        break;
+      }
+    }
+  } else {
+    moveGhostForwardWithCollision(blinky_);
+  }
   
   return success;
 }

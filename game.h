@@ -91,7 +91,7 @@ class Game {
     int totalPellets_;
     
     // How long each frame should take in ms.
-    static const Uint32 FRAME_TIME = 50;
+    static const Uint32 FRAME_TIME = 20;
     static const Uint32 TILE_SIZE = 25;
     
     // TODO: remove these.

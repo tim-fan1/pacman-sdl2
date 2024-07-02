@@ -27,8 +27,8 @@ Level::Level()
   defaultLevelText += "-#xxxx#xxx#xxx#xxxx#-";
   defaultLevelText += "-####x###-#-###x####-";
   defaultLevelText += "----#x#-------#x#----";
-  defaultLevelText += "#####x#-#####-#x#####";
-  defaultLevelText += "-----x--#-1-#--x-----";
+  defaultLevelText += "#####x#-##-##-#x#####";
+  defaultLevelText += "-----x----1----x-----";
   defaultLevelText += "#####x#-#####-#x#####";
   defaultLevelText += "----#x#-------#x#----";
   defaultLevelText += "-####x#-#####-#x####-";
