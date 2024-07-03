@@ -13,6 +13,10 @@ class Actor {
     int getX();
     int getY();
     
+    // Where is this actor's starting position in tile space?
+    int getStartTileX();
+    int getStartTileY();
+    
     // Which direction is this actor facing?
     Direction getDirection();
     void setDirection(Direction direction);
@@ -20,11 +24,23 @@ class Actor {
     // Move one frame in current direction.
     void moveForward();
     void moveBackward();
+    
+    /* For ghosts. */
+    bool getIsFrightened();
+    void setIsFrightened(bool isFrightened);
+    
+    /* For PACMAN. */
+    int getPower();
+    void setPower(int powerFrames);
 
   private:
     // Where is this actor (the top left corner) in pixel space?
     int x_;
     int y_;
+    
+    // Where did this actor start in tile space?
+    int startTileX_;
+    int startTileY_;
 
     // Which direction is this actor facing?
     Direction direction_;
@@ -33,6 +49,15 @@ class Actor {
     int speed_;
     
     int tileSize_;
+    
+    /* For ghosts. */
+
+    bool isFrightened_;
+    
+    /* For PACMAN. */
+    
+    // How many frames of power does this PACMAN have left?
+    int power_;
 };
 
 #endif /* actor_h */

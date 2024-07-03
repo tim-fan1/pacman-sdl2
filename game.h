@@ -30,6 +30,8 @@ class Game {
     
   private:
   
+    bool isCollidingWithActor(Actor *actorA, Actor *actorB);
+  
     bool isCollidingWithTile(Actor *actor, int tileX, int tileY);
 
     /**
@@ -64,6 +66,8 @@ class Game {
      * Render the current state of our simulation to screen.
      */
     void render();
+    
+    void drawGhost(Actor *ghost);
     
     /**
      * Clip the spritesheet using given clip, and
