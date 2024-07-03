@@ -1,14 +1,19 @@
 #include "actor.h"
 #include <cassert>
 
-Actor::Actor(int x, int y, int tileSize, int speed)
+Actor::Actor(int tileX, int tileY, int tileSize, int speed)
 {
   tileSize_ = tileSize;
   speed_ = speed;
   
   // Place actor at tile (x, y).
-  x_ = x * tileSize_;
-  y_ = y * tileSize_;
+  x_ = tileX * tileSize_;
+  y_ = tileY * tileSize_;
+  
+  startTileX_ = tileX;
+  startTileY_ = tileY;
+  
+  power_ = 0;
 }
 
 int Actor::getX()
@@ -21,6 +26,16 @@ int Actor::getY()
   return y_;
 }
 
+int Actor::getStartTileX()
+{
+  return startTileX_;
+}
+
+int Actor::getStartTileY()
+{
+  return startTileY_;
+}
+
 Direction Actor::getDirection()
 {
   return direction_;
@@ -29,6 +44,26 @@ Direction Actor::getDirection()
 void Actor::setDirection(Direction direction)
 {
   direction_ = direction;
+}
+
+bool Actor::getIsFrightened()
+{
+  return isFrightened_;
+}
+
+void Actor::setIsFrightened(bool isFrightened)
+{
+  isFrightened_ = isFrightened;
+}
+
+int Actor::getPower()
+{
+  return power_;
+}
+
+void Actor::setPower(int power)
+{
+  power_ = power;
 }
 
 void Actor::moveForward()

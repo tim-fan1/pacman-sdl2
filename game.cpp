@@ -226,6 +226,35 @@ void Game::run(Level *level)
   return;
 }
 
+bool Game::isCollidingWithActor(Actor *actorA, Actor *actorB)
+{
+  // How far away the top side of the actor is from the top of the screen.
+  int topActorA = actorA->getY();
+  // How far away the bottom side of the actor is from the top of the screen.
+  int botActorA = topActorA + TILE_SIZE;
+  // How far away the left side of the actor is from the left of the screen.
+  int leftActorA = actorA->getX();
+  // How far away the right side of the actor is from the left of the screen.
+  int rightActorA = leftActorA + TILE_SIZE;
+  
+  // How far away the top side of the actor is from the top of the screen.
+  int topActorB = actorB->getY();
+  // How far away the bottom side of the actor is from the top of the screen.
+  int botActorB = topActorB + TILE_SIZE;
+  // How far away the left side of the actor is from the left of the screen.
+  int leftActorB = actorB->getX();
+  // How far away the right side of the actor is from the left of the screen.
+  int rightActorB = leftActorB + TILE_SIZE;
+  
+  if (botActorA <= topActorB) return false;
+  if (botActorB <= topActorA) return false;
+  
+  if (rightActorA <= leftActorB) return false;
+  if (rightActorB <= leftActorA) return false;
+  
+  return true;
+}
+
 bool Game::isCollidingWithTile(Actor *actor, int tileX, int tileY)
 {
   // How far away the top side of the actor is from the top of the screen.
@@ -282,7 +311,7 @@ bool Game::movePacmanForwardWithCollision()
     }
   }
   
-  // If don't crash with any walls.
+  // If none of the tiles are walls, then successfully moved.
   if (success) {
     for (int i = -1; i <= 1; i++) {
       for (int j = -1; j <= 1; j++) {
@@ -293,11 +322,12 @@ bool Game::movePacmanForwardWithCollision()
             pellets_ += 1;
             board_[pacmanX + i][pacmanY + j] = TILE_NONE;
             if (pellets_ == totalPellets_) {
-              // TODO: Cleared the level!
+              // TODO: Game over!
               pacman_->setDirection(DIRECTION_NONE);
             }
           } else if (tile == TILE_POWER_PELLET) {
-            // TODO: Implement power pellet.
+            pacman_->setPower(1000);
+            board_[pacmanX + i][pacmanY + j] = TILE_NONE;
           }
         }
       }
@@ -307,9 +337,16 @@ bool Game::movePacmanForwardWithCollision()
   if (!success) {
     // If any of the tiles are walls, reverse PACMAN.
     pacman_->moveBackward();
-  } else {
-    // TODO: Successfully moved. Check if crashed into a ghost!
-//    assert(!"TODO: Check if crashed into ghost!");
+  } else /* if (success) */ {
+    // Successfully moved. Check if crash with any ghosts.
+    if (isCollidingWithActor(pacman_, blinky_)) {
+      if (pacman_->getPower() > 0) {
+        // PACMAN has power remaining.
+        blinky_->setIsFrightened(true);
+      } else {
+        // PACMAN has no power remaining. TODO: Game over!
+      }
+    }
   }
   
   return success;
@@ -346,8 +383,23 @@ bool Game::moveGhostForwardWithCollision(Actor *ghost)
     // If any of the tiles are walls, reverse this ghost.
     ghost->moveBackward();
   } else {
-    // TODO: Successfully moved. Check if crashed into PACMAN!
-//    assert(!"TODO: Check if crashed into PACMAN!");
+    // Successfully moved. Check if this ghost crash with PACMAN.
+    if (isCollidingWithActor(ghost, pacman_)) {
+      if (pacman_->getPower() > 0) {
+        // PACMAN has power remaining.
+        ghost->setIsFrightened(true);
+      } else {
+        // PACMAN has no power remaining. TODO: Game over!
+      }
+    }
+    // And if this ghost is frightened, Check if they have returned home.
+    if (ghost->getIsFrightened()) {
+      if (ghost->getX() == ghost->getStartTileX() * TILE_SIZE &&
+          ghost->getY() == ghost->getStartTileY() * TILE_SIZE) {
+        // Ghost has arrived home. No longer frightened.
+        ghost->setIsFrightened(false);
+      }
+    }
   }
   
   return success;
@@ -360,6 +412,10 @@ bool Game::update(Direction newDirection)
   /* First move PACMAN. */
   
   // Moving PACMAN.
+  if (pacman_->getPower() > 0) {
+    // If PACMAN has power left, reduce by one frame.
+    pacman_->setPower(pacman_->getPower() - 1);
+  }
   Direction oldDirection = pacman_->getDirection();
   if (newDirection == DIRECTION_NONE) {
     success = movePacmanForwardWithCollision();
@@ -376,16 +432,25 @@ bool Game::update(Direction newDirection)
   
   /* Then move the ghosts. */
   
-  // Moving Blinky, target is where PACMAN is.
+  // Moving Blinky. Target is where PACMAN is.
   int blinkyTileX = (blinky_->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
   int blinkyTileY = (blinky_->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
-  int targetTileX = (pacman_->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
-  int targetTileY = (pacman_->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
+  int targetTileX;
+  int targetTileY;
+  if (blinky_->getIsFrightened()) {
+    // Head back home little ghost.
+    targetTileX = blinky_->getStartTileX();
+    targetTileY = blinky_->getStartTileY();
+  } else /* if (!blinky_->isFrightened()) */ {
+    // Head for PACMAN!
+    targetTileX = (pacman_->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
+    targetTileY = (pacman_->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
+  }
 
   if (blinky_->getX() == blinkyTileX * TILE_SIZE &&
       blinky_->getY() == blinkyTileY * TILE_SIZE) {
-    // Blinky is exactly in the tile it is in.
-    // Decide which tile Blinky will go to next.
+    // Since Blinky is exactly in the tile it is in, we
+    // now decide which tile Blinky will go towards next.
     oldDirection = blinky_->getDirection();
     std::vector<std::pair<float, Direction>> directions;
     int dx[4] = { 0, 0, -1, 1 };
@@ -396,14 +461,24 @@ bool Game::update(Direction newDirection)
              pow(blinkyTileY + dy[i] - targetTileY, 2));
       if (i == 0 && oldDirection != DIRECTION_DOWN) {
         newDirection = DIRECTION_UP;
+        directions.push_back(
+          std::make_pair(distanceFromAdjacentTile, newDirection));
       } else if (i == 1 && oldDirection != DIRECTION_UP) {
         newDirection = DIRECTION_DOWN;
+        directions.push_back(
+          std::make_pair(distanceFromAdjacentTile, newDirection));
       } else if (i == 2 && oldDirection != DIRECTION_RIGHT) {
         newDirection = DIRECTION_LEFT;
+        directions.push_back(
+          std::make_pair(distanceFromAdjacentTile, newDirection));
       } else if (i == 3 && oldDirection != DIRECTION_LEFT) {
         newDirection = DIRECTION_RIGHT;
+        directions.push_back(
+          std::make_pair(distanceFromAdjacentTile, newDirection));
       }
-      directions.push_back(std::make_pair(distanceFromAdjacentTile, newDirection));
+    }
+    if (directions.empty()) {
+      assert(!"i don't know what to do here...\n");
     }
     std::sort(directions.begin(), directions.end());
     for (auto vit = directions.begin(); vit != directions.end(); vit++) {
@@ -413,6 +488,8 @@ bool Game::update(Direction newDirection)
       }
     }
   } else {
+    // Otherwise, continue moving Blinky forward towards the tile
+    // in front of it. Will eventually be exactly in that tile.
     moveGhostForwardWithCollision(blinky_);
   }
   
@@ -449,11 +526,20 @@ void Game::render()
   
   // Draw actors into buffer, on top of board.
   drawYellow(pacman_->getX(), pacman_->getY());
-  drawYellow(blinky_->getX(), blinky_->getY());
+  drawGhost(blinky_);
   
   // Present buffer.
   SDL_RenderPresent(renderer_);
   return;
+}
+
+void Game::drawGhost(Actor *ghost)
+{
+  if (ghost->getIsFrightened()) {
+    drawRed(ghost->getX(), ghost->getY());
+  } else {
+    drawYellow(ghost->getX(), ghost->getY());
+  }
 }
 
 void Game::drawRed(int x, int y)
@@ -463,6 +549,7 @@ void Game::drawRed(int x, int y)
   SDL_RenderFillRect(renderer_, &rect);
   SDL_RenderDrawRect(renderer_, &rect);
 }
+
 void Game::drawYellow(int x, int y)
 {
   SDL_Rect rect = { .x = x, .y = y, .w = TILE_SIZE, .h = TILE_SIZE };
