@@ -19,28 +19,28 @@ Level::Level()
 
   
   
-  defaultLevelText += "-###################-";
-  defaultLevelText += "-#xxxxxxxx#xxxxxxxx#-";
-  defaultLevelText += "-#y##x###x#x###x##y#-";
-  defaultLevelText += "-#xxxxxxxxxxxxxxxxx#-";
-  defaultLevelText += "-#x##x#x#####x#x##x#-";
-  defaultLevelText += "-#xxxx#xxx#xxx#xxxx#-";
-  defaultLevelText += "-####x###-#-###x####-";
-  defaultLevelText += "----#x#-------#x#----";
-  defaultLevelText += "#####x#-##-##-#x#####";
-  defaultLevelText += "-----x----1----x-----";
-  defaultLevelText += "#####x#-#####-#x#####";
-  defaultLevelText += "----#x#-------#x#----";
-  defaultLevelText += "-####x#-#####-#x####-";
-  defaultLevelText += "-#xxxxxxxx#xxxxxxxx#-";
-  defaultLevelText += "-#x##x###x#x###x##x#-";
-  defaultLevelText += "-#yx#xxxxx0xxxxx#xy#-";
-  defaultLevelText += "-##x#x#x#####x#x#x##-";
-  defaultLevelText += "-#xxxx#xxx#xxx#xxxx#-";
-  defaultLevelText += "-#x######x#x######x#-";
-  defaultLevelText += "-#xxxxxxxxxxxxxxxxx#-";
-  defaultLevelText += "-###################-";
-  width_ = 21;
+  defaultLevelText += "---###################---";
+  defaultLevelText += "---#xxxxxxxx#xxxxxxxx#---";
+  defaultLevelText += "---#y##x###x#x###x##y#---";
+  defaultLevelText += "---#xxxxxxxxxxxxxxxxx#---";
+  defaultLevelText += "---#x##x#x#####x#x##x#---";
+  defaultLevelText += "---#xxxx#xxx#xxx#xxxx#---";
+  defaultLevelText += "---####x###-#-###x####---";
+  defaultLevelText += "------#x#-------#x#------";
+  defaultLevelText += "-######x#-##-##-#x######-";
+  defaultLevelText += "#p-----x----1----x-----p#";
+  defaultLevelText += "-######x#-#####-#x######-";
+  defaultLevelText += "------#x#-------#x#------";
+  defaultLevelText += "---####x#-#####-#x####---";
+  defaultLevelText += "---#xxxxxxxx#xxxxxxxx#---";
+  defaultLevelText += "---#x##x###x#x###x##x#---";
+  defaultLevelText += "---#yx#xxxxx0xxxxx#xy#---";
+  defaultLevelText += "---##x#x#x#####x#x#x##---";
+  defaultLevelText += "---#xxxx#xxx#xxx#xxxx#---";
+  defaultLevelText += "---#x######x#x######x#---";
+  defaultLevelText += "---#xxxxxxxxxxxxxxxxx#---";
+  defaultLevelText += "---###################---";
+  width_ = 25;
   height_ = 21;
   
   

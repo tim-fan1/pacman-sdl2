@@ -17,6 +17,9 @@ class Actor {
     int getStartTileX();
     int getStartTileY();
     
+    void setTileX(int tileX);
+    void setTileY(int tileY);
+    
     // Which direction is this actor facing?
     Direction getDirection();
     void setDirection(Direction direction);
