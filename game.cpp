@@ -15,6 +15,12 @@ Game::Game()
   blinky_ = NULL;
   pellets_ = 0;
   totalPellets_ = 0;
+  isGameOver_ = false;
+  isGameOverWin_ = false;
+  portalOneX = -1;
+  portalOneY = -1;
+  portalTwoX = -1;
+  portalTwoY = -1;
 
   bool success = true;
   
@@ -81,6 +87,10 @@ Game::~Game()
 {
   if (window_ != NULL) SDL_DestroyWindow(window_);
   SDL_Quit();
+  if (spritesheet_ != NULL) SDL_DestroyTexture(spritesheet_);
+  if (board_ != NULL) free(board_);
+  if (pacman_ != NULL) delete pacman_;
+  if (blinky_ != NULL) delete blinky_;
 }
 
 bool Game::getSDLInitSuccess()
@@ -98,12 +108,12 @@ void Game::run(Level *level)
   boardWidth_ = level->getWidth();
   std::string levelText = level->getLevelText();
   board_ = (TileType **)malloc(boardWidth_ * sizeof(TileType *));
-  for (int y = 0; y < boardHeight_; y++) {
-    board_[y] = (TileType *)malloc(boardHeight_ * sizeof(TileType));
+  for (int x = 0; x < boardWidth_; x++) {
+    board_[x] = (TileType *)malloc(boardHeight_ * sizeof(TileType));
   }
   for (int y = 0; y < boardHeight_; y++) {
     for (int x = 0; x < boardWidth_; x++) {
-      switch (levelText.at(y * boardHeight_ + x)) {
+      switch (levelText.at(y * boardWidth_ + x)) {
         case '-':
           board_[x][y] = TILE_NONE;
           break;
@@ -125,11 +135,20 @@ void Game::run(Level *level)
         case '1':
           // Ghost starting position.
           board_[x][y] = TILE_NONE;
-          blinky_ = new Actor(x, y, TILE_SIZE);
+          blinky_ = new Actor(x, y, TILE_SIZE, 1);
+          break;
+        case 'p':
+          board_[x][y] = TILE_PORTAL;
+          if (portalOneX == -1) {
+            portalOneX = x;
+            portalOneY = y;
+          } else {
+            portalTwoX = x;
+            portalTwoY = y;
+          }
           break;
         default:
-          printf("Error: Unexpected character!\n");
-          board_[x][y] = TILE_NONE;
+          assert(!"Unexpected character!");
           break;
       }
     }
@@ -200,7 +219,7 @@ void Game::run(Level *level)
     
     // Update our simulation by one frame.
     if (!update(direction)) {
-      // Failed to update to new direction.
+      // Failed to update PACMAN to new direction.
       // Remember the direction, will use in future frames
       // if user doesn't input a direction on those frames.
       turnBuffer = direction;
@@ -224,6 +243,12 @@ void Game::run(Level *level)
   
   // Control reaches here when user has quit the application.
   return;
+}
+
+void Game::gameOver(bool isWin)
+{
+  isGameOver_ = true;
+  isGameOverWin_ = isWin;
 }
 
 bool Game::isCollidingWithActor(Actor *actorA, Actor *actorB)
@@ -316,18 +341,34 @@ bool Game::movePacmanForwardWithCollision()
     for (int i = -1; i <= 1; i++) {
       for (int j = -1; j <= 1; j++) {
         // Check if any of the tiles are pellets, power pellets, and so on.
-        tile = board_[pacmanX + i][pacmanY + j];
-        if (isCollidingWithTile(pacman_, pacmanX + i, pacmanY + j)) {
+        int tileX = pacmanX + i;
+        int tileY = pacmanY + j;
+        tile = board_[tileX][tileY];
+        if (isCollidingWithTile(pacman_, tileX, tileY)) {
           if (tile == TILE_PELLET) {
             pellets_ += 1;
             board_[pacmanX + i][pacmanY + j] = TILE_NONE;
             if (pellets_ == totalPellets_) {
-              // TODO: Game over!
-              pacman_->setDirection(DIRECTION_NONE);
+              // PACMAN has collected all pellets.
+              gameOver(true);
             }
           } else if (tile == TILE_POWER_PELLET) {
-            pacman_->setPower(1000);
+            pacman_->setPower(100);
             board_[pacmanX + i][pacmanY + j] = TILE_NONE;
+          } else if (tile == TILE_PORTAL) {
+            if (tileX * TILE_SIZE == pacman_->getX() &&
+                tileY * TILE_SIZE == pacman_->getY()) {
+              // We should be exactly in a portal.
+              if (tileX == portalOneX && tileY == portalOneY) {
+                pacman_->setTileX(portalTwoX);
+                pacman_->setTileY(portalTwoY);
+              } else if (tileX == portalTwoX && tileY == portalTwoY) {
+                pacman_->setTileX(portalOneX);
+                pacman_->setTileY(portalOneY);
+              } else {
+                assert(!"We should be exactly in a portal...");
+              }
+            }
           }
         }
       }
@@ -343,8 +384,11 @@ bool Game::movePacmanForwardWithCollision()
       if (pacman_->getPower() > 0) {
         // PACMAN has power remaining.
         blinky_->setIsFrightened(true);
-      } else {
-        // PACMAN has no power remaining. TODO: Game over!
+      } else if (!blinky_->getIsFrightened()) {
+        // PACMAN has no power remaining,
+        // and Blinky is not frightened,
+        // so game over, PACMAN lost.
+        gameOver(false);
       }
     }
   }
@@ -383,13 +427,16 @@ bool Game::moveGhostForwardWithCollision(Actor *ghost)
     // If any of the tiles are walls, reverse this ghost.
     ghost->moveBackward();
   } else {
-    // Successfully moved. Check if this ghost crash with PACMAN.
+    // Successfully moved. Check if this ghost crashed into PACMAN.
     if (isCollidingWithActor(ghost, pacman_)) {
       if (pacman_->getPower() > 0) {
         // PACMAN has power remaining.
         ghost->setIsFrightened(true);
-      } else {
-        // PACMAN has no power remaining. TODO: Game over!
+      } else if (!ghost->getIsFrightened()) {
+        // PACMAN has no power remaining,
+        // and this ghost is not frightened,
+        // so is game over for PACMAN.
+        gameOver(false);
       }
     }
     // And if this ghost is frightened, Check if they have returned home.
@@ -400,6 +447,24 @@ bool Game::moveGhostForwardWithCollision(Actor *ghost)
         ghost->setIsFrightened(false);
       }
     }
+    // If this ghost is in a portal, check if they are exactly in the portal.
+    int ghostTileX = (ghost->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
+    int ghostTileY = (ghost->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
+    if (board_[ghostTileX][ghostTileY] == TILE_PORTAL) {
+      if (ghostTileX * TILE_SIZE == ghost->getX() &&
+          ghostTileY * TILE_SIZE == ghost->getY()) {
+        // We should be exactly in a portal.
+        if (ghostTileX == portalOneX && ghostTileY == portalOneY) {
+          ghost->setTileX(portalTwoX);
+          ghost->setTileY(portalTwoY);
+        } else if (ghostTileX == portalTwoX && ghostTileY == portalTwoY) {
+          ghost->setTileX(portalOneX);
+          ghost->setTileY(portalOneY);
+        } else {
+          assert(!"We should be exactly in a portal...");
+        }
+      }
+    }
   }
   
   return success;
@@ -407,6 +472,11 @@ bool Game::moveGhostForwardWithCollision(Actor *ghost)
 
 bool Game::update(Direction newDirection)
 {
+  /* No point updating if game is over. */
+  if (isGameOver_) {
+    return true;
+  }
+
   bool success = true;
   
   /* First move PACMAN. */
@@ -503,8 +573,8 @@ void Game::render()
   SDL_RenderClear(renderer_);
   
   // Draw board into buffer.
-  for (int i = 0; i < boardHeight_; i++) {
-    for (int j = 0; j < boardWidth_; j++) {
+  for (int j = 0; j < boardHeight_; j++) {
+    for (int i = 0; i < boardWidth_; i++) {
       switch (board_[i][j]) {
         case TILE_NONE:
           break;
@@ -517,6 +587,8 @@ void Game::render()
         case TILE_PELLET:
           drawGreen(i * TILE_SIZE, j * TILE_SIZE);
           break;
+        case TILE_PORTAL:
+          break;
         default:
           printf("Render: Unexpected tile!\n");
           break;
@@ -525,8 +597,20 @@ void Game::render()
   }
   
   // Draw actors into buffer, on top of board.
-  drawYellow(pacman_->getX(), pacman_->getY());
+  drawPacman();
   drawGhost(blinky_);
+  
+  // And draw game over text on top, if is game over.
+  if (isGameOver_) {
+    // TODO: Make the game over screen nicer.
+    if (isGameOverWin_) {
+      SDL_SetRenderDrawColor(renderer_, 0x00, 0x00, 0x00, 0xFF);
+      SDL_RenderClear(renderer_);
+    } else {
+      SDL_SetRenderDrawColor(renderer_, 0x33, 0x33, 0x33, 0xFF);
+      SDL_RenderClear(renderer_);
+    }
+  }
   
   // Present buffer.
   SDL_RenderPresent(renderer_);
@@ -539,6 +623,15 @@ void Game::drawGhost(Actor *ghost)
     drawRed(ghost->getX(), ghost->getY());
   } else {
     drawYellow(ghost->getX(), ghost->getY());
+  }
+}
+
+void Game::drawPacman()
+{
+  if (pacman_->getPower() > 0) {
+    drawRed(pacman_->getX(), pacman_->getY());
+  } else {
+    drawYellow(pacman_->getX(), pacman_->getY());
   }
 }
 

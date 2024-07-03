@@ -10,7 +10,7 @@
 #include "direction.h"
 
 typedef enum {
-  TILE_NONE, TILE_WALL, TILE_PELLET, TILE_POWER_PELLET
+  TILE_NONE, TILE_WALL, TILE_PELLET, TILE_POWER_PELLET, TILE_PORTAL
 } TileType;
 
 class Game {
@@ -29,6 +29,7 @@ class Game {
     void run(Level *level);
     
   private:
+    void gameOver(bool isWin);
   
     bool isCollidingWithActor(Actor *actorA, Actor *actorB);
   
@@ -69,6 +70,8 @@ class Game {
     
     void drawGhost(Actor *ghost);
     
+    void drawPacman();
+    
     /**
      * Clip the spritesheet using given clip, and
      * draw that sprite at (x,y) on our window --
@@ -93,6 +96,12 @@ class Game {
     Actor *blinky_;
     int pellets_;
     int totalPellets_;
+    bool isGameOver_;
+    bool isGameOverWin_;
+    int portalOneX;
+    int portalOneY;
+    int portalTwoX;
+    int portalTwoY;
     
     // How long each frame should take in ms.
     static const Uint32 FRAME_TIME = 20;

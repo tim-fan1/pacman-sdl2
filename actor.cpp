@@ -16,6 +16,8 @@ Actor::Actor(int tileX, int tileY, int tileSize, int speed)
   power_ = 0;
 }
 
+Actor::~Actor() {}
+
 int Actor::getX()
 {
   return x_;
@@ -34,6 +36,16 @@ int Actor::getStartTileX()
 int Actor::getStartTileY()
 {
   return startTileY_;
+}
+
+void Actor::setTileX(int tileX)
+{
+  x_ = tileX * tileSize_;
+}
+
+void Actor::setTileY(int tileY)
+{
+  y_ = tileY * tileSize_;
 }
 
 Direction Actor::getDirection()
