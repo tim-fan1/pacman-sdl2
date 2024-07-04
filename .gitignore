@@ -1,4 +1,4 @@
 *.entitlements
 *.xcassets
 *.lproj
-
+.DS_Store
