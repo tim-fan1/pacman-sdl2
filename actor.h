@@ -3,10 +3,30 @@
 
 #include "direction.h"
 
+typedef enum {
+  GHOST_CHASE,
+  GHOST_SCATTER,
+  GHOST_EATEN,
+  GHOST_FRIGHTENED,
+  GHOST_FINDING_SPOT,
+  GHOST_FINDING_EXIT
+} GHOST_STATE;
+
 class Actor {
   public:
-    // Which tile should this actor start on in the game board?
-    Actor(int tileX, int tileY, int tileSize, int speed = 5);
+    /**
+     * Places actor in the middle of the two adjacent tiles
+     * (tileX, tileY) and ((tileX + 1), tileY), so this actor
+     * will have pixel coordinates (coords of the top left corner):
+     *   x = (tileX x TILESIZE) + (TILESIZE / 2),
+     *   y = (tileY x TILESIZE).
+     * We do this so that when we draw this actor on the screen -- but
+     * with having double the height and double the width of its actual
+     * hitbox!!! -- the sprite drawn on the screen will end up filling
+     * up both tiles (tileX, tileY) and (tileX + 1, tileY) completely.
+     */
+    Actor(int tileX, int tileY, int tileSize, int waitingFrames = 0,
+          int inBaseTileX = 0, int inBaseTileY = 0, int speed = 5);
     ~Actor();
     
     // Where is this actor (the top left corner) in pixel space?
@@ -29,8 +49,40 @@ class Actor {
     void moveBackward();
     
     /* For ghosts. */
+    
+    void turnAround();
+    
+    void setChaseOrScatter();
+    
+    int getSpotInBaseX();
+    int getSpotInBaseY();
+    
+    // The four main states.
+    bool getIsChase();
+    void setIsChase();
+    
+    bool getIsScatter();
+    void setIsScatter();
+    
+    bool getIsEaten();
+    void setIsEaten();
+    
     bool getIsFrightened();
-    void setIsFrightened(bool isFrightened);
+    void setIsFrightened();
+    
+    // Entering home.
+    bool getIsFindingSpot();
+    void setIsFindingSpot();
+    
+    // Leaving home.
+    bool getIsFindingExit();
+    void setIsFindingExit();
+    
+    // At start of game, how long to wait until start to leave home.
+    int getWaitingFrames();
+    void setWaitingFrames(int waitingFrames);
+    
+    void setSpeed(int speed);
     
     /* For PACMAN. */
     int getPower();
@@ -54,8 +106,14 @@ class Actor {
     int tileSize_;
     
     /* For ghosts. */
-
-    bool isFrightened_;
+    GHOST_STATE state_;
+    
+    // How many more frames does this ghost have to wait inside home base?
+    int waitingFrames_;
+    
+    // Where should this ghost go inside the home base when return to base.
+    int inBaseTileX_;
+    int inBaseTileY_;
     
     /* For PACMAN. */
     

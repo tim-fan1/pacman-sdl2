@@ -1,14 +1,19 @@
 #include "actor.h"
 #include <cassert>
 
-Actor::Actor(int tileX, int tileY, int tileSize, int speed)
+Actor::Actor(int tileX, int tileY, int tileSize, int waitingFrames,
+             int inBaseTileX, int inBaseTileY, int speed)
 {
   tileSize_ = tileSize;
+  waitingFrames_ = waitingFrames;
   speed_ = speed;
   
   // Place actor at tile (x, y).
-  x_ = tileX * tileSize_;
-  y_ = tileY * tileSize_;
+  x_ = tileX * tileSize + (tileSize / 2);
+  y_ = tileY * tileSize;
+  
+  inBaseTileX_ = inBaseTileX;
+  inBaseTileY_ = inBaseTileY;
   
   startTileX_ = tileX;
   startTileY_ = tileY;
@@ -58,14 +63,108 @@ void Actor::setDirection(Direction direction)
   direction_ = direction;
 }
 
-bool Actor::getIsFrightened()
+int Actor::getWaitingFrames()
 {
-  return isFrightened_;
+  return waitingFrames_;
 }
 
-void Actor::setIsFrightened(bool isFrightened)
+void Actor::setWaitingFrames(int waitingFrames)
 {
-  isFrightened_ = isFrightened;
+  waitingFrames_ = waitingFrames;
+}
+
+void Actor::setSpeed(int speed)
+{
+  speed_ = speed;
+}
+
+void Actor::turnAround()
+{
+  if (direction_ == DIRECTION_UP) {
+    direction_ = DIRECTION_DOWN;
+  } else if (direction_ == DIRECTION_DOWN) {
+    direction_ = DIRECTION_UP;
+  } else if (direction_ == DIRECTION_LEFT) {
+    direction_ = DIRECTION_RIGHT;
+  } else if (direction_ == DIRECTION_RIGHT) {
+    direction_ = DIRECTION_LEFT;
+  }
+}
+
+void Actor::setChaseOrScatter()
+{
+  // TODO: Implement me!
+  setIsChase();
+}
+
+int Actor::getSpotInBaseX()
+{
+  return (inBaseTileX_ * tileSize_) + (tileSize_ / 2);
+}
+
+int Actor::getSpotInBaseY()
+{
+  return (inBaseTileY_ * tileSize_);
+}
+
+bool Actor::getIsFrightened()
+{
+  return state_ == GHOST_FRIGHTENED;
+}
+
+void Actor::setIsFrightened()
+{
+  state_ = GHOST_FRIGHTENED;
+}
+
+bool Actor::getIsEaten()
+{
+  return state_ == GHOST_EATEN;
+}
+
+void Actor::setIsEaten()
+{
+  state_ = GHOST_EATEN;
+}
+
+bool Actor::getIsFindingSpot()
+{
+  return state_ == GHOST_FINDING_SPOT;
+}
+
+void Actor::setIsFindingSpot()
+{
+  state_ = GHOST_FINDING_SPOT;
+}
+
+bool Actor::getIsFindingExit()
+{
+  return state_ == GHOST_FINDING_EXIT;
+}
+
+void Actor::setIsFindingExit()
+{
+  state_ = GHOST_FINDING_EXIT;
+}
+
+bool Actor::getIsChase()
+{
+  return state_ == GHOST_CHASE;
+}
+
+void Actor::setIsChase()
+{
+  state_ = GHOST_CHASE;
+}
+
+bool Actor::getIsScatter()
+{
+  return state_ == GHOST_SCATTER;
+}
+
+void Actor::setIsScatter()
+{
+  state_ = GHOST_SCATTER;
 }
 
 int Actor::getPower()

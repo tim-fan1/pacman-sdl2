@@ -10,7 +10,13 @@
 #include "direction.h"
 
 typedef enum {
-  TILE_NONE, TILE_WALL, TILE_PELLET, TILE_POWER_PELLET, TILE_PORTAL
+  TILE_NONE,
+  TILE_WALL,
+  TILE_PELLET,
+  TILE_POWER_PELLET,
+  TILE_PORTAL,
+  TILE_BASE,
+  TILE_GATE
 } TileType;
 
 class Game {
@@ -44,6 +50,8 @@ class Game {
     bool movePacmanForwardWithCollision();
 
     bool moveGhostForwardWithCollision(Actor *ghost);
+    
+    void moveGhost(Actor *ghost, int targetTileX, int targetTileY);
 
     /**
      * Update our simulation by one frame:
@@ -94,6 +102,9 @@ class Game {
     int boardHeight_;
     Actor *pacman_;
     Actor *blinky_;
+    Actor *inky_;
+    Actor *pinky_;
+    Actor *clyde_;
     int pellets_;
     int totalPellets_;
     bool isGameOver_;
@@ -105,13 +116,16 @@ class Game {
     
     // How long each frame should take in ms.
     static const Uint32 FRAME_TIME = 20;
-    static const Uint32 TILE_SIZE = 25;
+    static const Uint32 TILE_SIZE = 20;
     
     // TODO: remove these.
-    void drawRed(int x, int y);
-    void drawYellow(int x, int y);
-    void drawBlue(int x, int y);
-    void drawGreen(int x, int y);
+    void drawRed(int x, int y, int w, int h);
+    void drawYellow(int x, int y, int w, int h);
+    void drawBlue(int x, int y, int w, int h);
+    void drawGreen(int x, int y, int w, int h);
+    void drawGrey(int x, int y, int w, int h);
+    void drawDarkGrey(int x, int y, int w, int h);
+    void drawWhite(int x, int y, int w, int h);
 };
 
 #endif /* game_h */
