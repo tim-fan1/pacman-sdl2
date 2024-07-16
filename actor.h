@@ -26,7 +26,7 @@ class Actor {
      * up both tiles (tileX, tileY) and (tileX + 1, tileY) completely.
      */
     Actor(int tileX, int tileY, int tileSize, int waitingFrames = 0,
-          int inBaseTileX = 0, int inBaseTileY = 0, int speed = 5);
+          int inBaseTileX = 0, int inBaseTileY = 0, int speed = 2);
     ~Actor();
     
     // Where is this actor (the top left corner) in pixel space?

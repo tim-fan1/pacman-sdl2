@@ -45,7 +45,7 @@ class Game {
      * Move PACMAN forward while accounting for collision
      * within our game world.
      *
-     * \Returns If PACMAN collided with any walls.
+     * \Returns If PACMAN successfully moved forward.
      */
     bool movePacmanForwardWithCollision();
 

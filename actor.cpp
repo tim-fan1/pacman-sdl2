@@ -93,7 +93,7 @@ void Actor::turnAround()
 
 void Actor::setChaseOrScatter()
 {
-  // TODO: Implement me!
+  // TODO: Implement me!!
   setIsChase();
 }
 

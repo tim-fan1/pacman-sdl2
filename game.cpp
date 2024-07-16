@@ -4,6 +4,8 @@
 #include "game.h"
 #include <vector>
 #include <utility>
+#include <cstdlib>
+#include <ctime>
 
 Game::Game()
 {
@@ -105,6 +107,9 @@ void Game::run(Level *level)
 {
   /* Initialising game state. */
 
+  // rand() is only used for frightened ghosts.
+  srand((unsigned int)time(NULL));
+  
   // Walk through level text to build board and
   // place actors at their starting positions.
   boardHeight_ = level->getHeight();
@@ -157,13 +162,13 @@ void Game::run(Level *level)
                   // The tile that all ghosts target to reach home.
           board_[x][y] = TILE_NONE;
           if (blinky_ == NULL) {
-            blinky_ = new Actor(x, y, TILE_SIZE, 40, x, y + 3);
+            blinky_ = new Actor(x, y, TILE_SIZE, 0, x, y + 3);
           }
           break;
         case 'i': // Inky. At start stands inside base.
           board_[x][y] = TILE_BASE;
           if (inky_ == NULL) {
-            inky_ = new Actor(x, y, TILE_SIZE, 0, x, y);
+            inky_ = new Actor(x, y, TILE_SIZE, 500, x, y);
           }
           break;
         case 'p': // Pinky. At start stands inside base.
@@ -175,7 +180,7 @@ void Game::run(Level *level)
         case 'c': // Clyde. At start stands inside base.
           board_[x][y] = TILE_BASE;
           if (clyde_ == NULL) {
-            clyde_ = new Actor(x, y, TILE_SIZE, 2000, x, y);
+            clyde_ = new Actor(x, y, TILE_SIZE, 1000, x, y);
           }
           break;
         default:
@@ -570,11 +575,12 @@ void Game::moveGhost(Actor *ghost, int targetTileX, int targetTileY)
        (ghost->getY() == blinky_->getStartTileY() * TILE_SIZE)) {
       // Finished walking out of the base.
       // TODO: The state that ghost ends up being after exiting depends on:
+      // TODO: TODO: TODO: TODO: 3 (should be not easy).
       // (1) What time it is in the game since game start,
       //     state will be either Chase or Scatter.
       // (2) The ghost can't be Frightened after exiting
       //     base, even if PACMAN currently has power!
-      ghost->setIsChase();
+      ghost->setChaseOrScatter();
     } else if (ghost->getX() != (blinky_->getStartTileX() * TILE_SIZE) + (TILE_SIZE / 2)) {
       // If are not aligned with the gates, then continue
       // walking left/right until are aligned with the gates.
@@ -610,11 +616,46 @@ void Game::moveGhost(Actor *ghost, int targetTileX, int targetTileY)
       }
       moveGhostForwardWithCollision(ghost);
     }
-  } /* else if (ghost->getIsFrightened()) {
-    // TODO: Choose new random adjacent tile to walk towards!
-    // If are exactly in the tile are currently in!
-  } */ else if (ghost->getIsFrightened() || ghost->getIsScatter() ||
-                ghost->getIsChase() || ghost->getIsEaten()) {
+  } else if (ghost->getIsFrightened()) {
+    if (ghost->getX() == ghostTileX * TILE_SIZE &&
+        ghost->getY() == ghostTileY * TILE_SIZE) {
+      // We are exactly on a tile. Make sure we are at an intersection.
+      Direction oldDirection = ghost->getDirection();
+      Direction newDirection = DIRECTION_NONE;
+      int dx[4] = { 0, 0, -1, 1 };
+      int dy[4] = { -1, 1, 0, 0 };
+      std::vector<Direction> directions;
+      for (int i = 0; i < 4; i++) {
+        int adjacentX = ghostTileX + dx[i];
+        int adjacentY = ghostTileY + dy[i];
+        if (adjacentX < 0 || adjacentX > boardWidth_ - 1) continue;
+        if (adjacentY < 0 || adjacentY > boardHeight_ - 1) continue;
+        TileType adjacentTile = board_[adjacentX][adjacentY];
+        if (i == 0 && oldDirection != DIRECTION_DOWN && adjacentTile != TILE_GATE && adjacentTile != TILE_WALL) {
+          newDirection = DIRECTION_UP;
+          directions.push_back(newDirection);
+        } else if (i == 1 && oldDirection != DIRECTION_UP && adjacentTile != TILE_GATE && adjacentTile != TILE_WALL) {
+          newDirection = DIRECTION_DOWN;
+          directions.push_back(newDirection);
+        } else if (i == 2 && oldDirection != DIRECTION_RIGHT && adjacentTile != TILE_GATE && adjacentTile != TILE_WALL) {
+          newDirection = DIRECTION_LEFT;
+          directions.push_back(newDirection);
+        } else if (i == 3 && oldDirection != DIRECTION_LEFT && adjacentTile != TILE_GATE && adjacentTile != TILE_WALL) {
+          newDirection = DIRECTION_RIGHT;
+          directions.push_back(newDirection);
+        }
+      }
+      // FIXME: The way I've designed directions and intersections is bad.
+      assert(directions.size() != 0);
+      while (1) {
+        Direction randomDirection = directions.at(rand() % directions.size());
+        ghost->setDirection(randomDirection);
+        if (moveGhostForwardWithCollision(ghost)) break;
+      }
+    } else {
+      moveGhostForwardWithCollision(ghost);
+    }
+  } else {
     bool justFlipped = false;
     
     // Checking if this ghost should transition between
@@ -735,6 +776,7 @@ bool Game::update(Direction newDirection)
   moveGhost(blinky_, targetTileX, targetTileY);
   
   // TODO: Moving Inky. Target is...
+  // TODO: TODO: TODO: TODO: 2 (should be also pretty easy).
   if (inky_->getIsEaten()) {
     // Head back to the entrance of the home base,
     // Which is where Blinky starts at start of game.
