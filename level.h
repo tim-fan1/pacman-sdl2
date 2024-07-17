@@ -13,7 +13,6 @@ class Level {
      * the default level being instantiated.
      */
     Level();
-    Level(std::string levelText);
     ~Level();
     
     /**

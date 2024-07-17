@@ -8,6 +8,7 @@
 #include "level.h"
 #include "actor.h"
 #include "direction.h"
+#include "timer.h"
 
 typedef enum {
   TILE_NONE,
@@ -52,6 +53,11 @@ class Game {
     bool moveGhostForwardWithCollision(Actor *ghost);
     
     void moveGhost(Actor *ghost, int targetTileX, int targetTileY);
+    
+    /**
+     * Use Timer to calculate if this ghost should be in Chase or Scatter mode.
+     */
+    void setChaseOrScatter(Actor *ghost);
 
     /**
      * Update our simulation by one frame:
@@ -113,10 +119,11 @@ class Game {
     int portalOneY;
     int portalTwoX;
     int portalTwoY;
+    Timer *timer_;
     
     // How long each frame should take in ms.
     static const Uint32 FRAME_TIME = 20;
-    static const Uint32 TILE_SIZE = 20;
+    static const Uint32 TILE_SIZE = 24;
     
     // TODO: remove these.
     void drawRed(int x, int y, int w, int h);

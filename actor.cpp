@@ -91,12 +91,6 @@ void Actor::turnAround()
   }
 }
 
-void Actor::setChaseOrScatter()
-{
-  // TODO: Implement me!!
-  setIsChase();
-}
-
 int Actor::getSpotInBaseX()
 {
   return (inBaseTileX_ * tileSize_) + (tileSize_ / 2);
