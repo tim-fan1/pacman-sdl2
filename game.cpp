@@ -289,31 +289,14 @@ void Game::gameOver(bool isWin)
 
 bool Game::isCollidingWithActor(Actor *actorA, Actor *actorB)
 {
-  // How far away the top side of the actor is from the top of the screen.
-  int topActorA = actorA->getY();
-  // How far away the bottom side of the actor is from the top of the screen.
-  int botActorA = topActorA + TILE_SIZE;
-  // How far away the left side of the actor is from the left of the screen.
-  int leftActorA = actorA->getX();
-  // How far away the right side of the actor is from the left of the screen.
-  int rightActorA = leftActorA + TILE_SIZE;
+
+  int aTileX = (actorA->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
+  int aTileY = (actorA->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
+  int bTileX = (actorB->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
+  int bTileY = (actorB->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
   
-  // How far away the top side of the actor is from the top of the screen.
-  int topActorB = actorB->getY();
-  // How far away the bottom side of the actor is from the top of the screen.
-  int botActorB = topActorB + TILE_SIZE;
-  // How far away the left side of the actor is from the left of the screen.
-  int leftActorB = actorB->getX();
-  // How far away the right side of the actor is from the left of the screen.
-  int rightActorB = leftActorB + TILE_SIZE;
-  
-  if (botActorA <= topActorB) return false;
-  if (botActorB <= topActorA) return false;
-  
-  if (rightActorA <= leftActorB) return false;
-  if (rightActorB <= leftActorA) return false;
-  
-  return true;
+  return (aTileX == bTileX && aTileY == bTileY);
+
 }
 
 bool Game::isCollidingWithTile(Actor *actor, int tileX, int tileY)
