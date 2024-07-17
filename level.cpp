@@ -49,12 +49,6 @@ Level::Level()
   levelText_ = defaultLevelText;
 }
 
-Level::Level(std::string levelText)
-{
-  // TODO:
-  assert(false);
-}
-
 Level::~Level() {}
 
 std::string Level::getLevelText()

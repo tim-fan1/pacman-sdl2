@@ -45,7 +45,7 @@ Game::Game()
   
   // Initialise pacman-sdl2 application window and its screen renderer.
   if (success) {
-    window_ = SDL_CreateWindow("Pacman SDL2", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 800, 0);
+    window_ = SDL_CreateWindow("Pacman SDL2", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, TILE_SIZE * 28, TILE_SIZE * 36, 0);
     if (window_ == NULL) {
       printf("pacman-sdl2 application window initialisation failed! SDL Error %s\n", SDL_GetError());
       success = false;
@@ -289,14 +289,12 @@ void Game::gameOver(bool isWin)
 
 bool Game::isCollidingWithActor(Actor *actorA, Actor *actorB)
 {
-
   int aTileX = (actorA->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
   int aTileY = (actorA->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
   int bTileX = (actorB->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
   int bTileY = (actorB->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
   
   return (aTileX == bTileX && aTileY == bTileY);
-
 }
 
 bool Game::isCollidingWithTile(Actor *actor, int tileX, int tileY)
@@ -535,6 +533,12 @@ bool Game::moveGhostForwardWithCollision(Actor *ghost)
   return success;
 }
 
+void Game::setChaseOrScatter(Actor *ghost)
+{
+  // TODO: TODO: TODO: Implement me using timer!
+  ghost->setIsChase();
+}
+
 void Game::moveGhost(Actor *ghost, int targetTileX, int targetTileY)
 {
   int ghostTileX = (ghost->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
@@ -557,13 +561,7 @@ void Game::moveGhost(Actor *ghost, int targetTileX, int targetTileY)
         &&
        (ghost->getY() == blinky_->getStartTileY() * TILE_SIZE)) {
       // Finished walking out of the base.
-      // TODO: The state that ghost ends up being after exiting depends on:
-      // TODO: TODO: TODO: TODO: 3 (should be not easy).
-      // (1) What time it is in the game since game start,
-      //     state will be either Chase or Scatter.
-      // (2) The ghost can't be Frightened after exiting
-      //     base, even if PACMAN currently has power!
-      ghost->setChaseOrScatter();
+      setChaseOrScatter(ghost);
     } else if (ghost->getX() != (blinky_->getStartTileX() * TILE_SIZE) + (TILE_SIZE / 2)) {
       // If are not aligned with the gates, then continue
       // walking left/right until are aligned with the gates.
@@ -646,13 +644,13 @@ void Game::moveGhost(Actor *ghost, int targetTileX, int targetTileY)
     // If the ghost does change state on this frame,
     // then we will also flip them around.
     if (ghost->getIsScatter()) {
-      ghost->setChaseOrScatter();
+      setChaseOrScatter(ghost);
       if (ghost->getIsChase()) {
         ghost->turnAround();
         justFlipped = true;
       }
     } else if (ghost->getIsChase()) {
-      ghost->setChaseOrScatter();
+      setChaseOrScatter(ghost);
       if (ghost->getIsScatter()) {
         ghost->turnAround();
         justFlipped = true;
@@ -741,62 +739,154 @@ bool Game::update(Direction newDirection)
   
   /* Then move the ghosts. */
   
-  // TODO: Moving Blinky. Target is where PACMAN is.
-  int targetTileX;
-  int targetTileY;
-  if (blinky_->getIsEaten()) {
-    // Head back to the entrance of the home base,
-    // Which is where Blinky starts at start of game.
-    targetTileX = blinky_->getStartTileX();
-    targetTileY = blinky_->getStartTileY();
-  } else if (blinky_->getIsScatter()) {
-    // Target this ghost's corner of the map.
-  } else /* if (blinky_->getIsChase()) */ {
-    // Head for PACMAN!
-    targetTileX = (pacman_->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
-    targetTileY = (pacman_->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
+  // Game starts when PACMAN starts moving. Don't
+  // move ghosts if PACMAN hasn't started moving.
+  if (pacman_->getDirection() != DIRECTION_NONE) {
+    if (!timer_->isRunning()) {
+      timer_->start();
+    }
+    int pacmanTileX = (pacman_->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
+    int pacmanTileY = (pacman_->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
+    int targetTileX = pacmanTileX;
+    int targetTileY = pacmanTileY;
+    
+    // Moving Blinky. Target is directly where PACMAN is.
+    if (blinky_->getIsEaten()) {
+      // Head back to the entrance of the home base,
+      // Which is where Blinky starts at start of game.
+      targetTileX = blinky_->getStartTileX();
+      targetTileY = blinky_->getStartTileY();
+    } else if (blinky_->getIsScatter()) {
+      // Target the top right corner.
+      targetTileX = boardWidth_ - 3;
+      targetTileY = 0;
+    } else /* if (blinky_->getIsChase()) */ {
+      // Head for PACMAN!
+      targetTileX = pacmanTileX;
+      targetTileY = pacmanTileY;
+    }
+    moveGhost(blinky_, targetTileX, targetTileY);
+    
+    // Moving Inky. Flanks PACMAN with Blinky.
+    if (inky_->getIsEaten()) {
+      // Head back to the entrance of the home base,
+      // Which is where Blinky starts at start of game.
+      targetTileX = blinky_->getStartTileX();
+      targetTileY = blinky_->getStartTileY();
+    } else if (inky_->getIsScatter()) {
+      // Target the bottom right corner.
+      targetTileX = boardWidth_ - 1;
+      targetTileY = boardHeight_ - 2;
+    } else /* if (inky_->getIsChase()) */ {
+      // Head for behind PACMAN so that we can flank PACMAN with Blinky!
+      // Get the tile two tiles in front of PACMAN, this will be the midpoint.
+      int midTileX = pacmanTileX;
+      int midTileY = pacmanTileY;
+      switch (pacman_->getDirection()) {
+        case DIRECTION_LEFT:
+          // Shift mX left two tiles.
+          midTileX -= 2;
+          break;
+        case DIRECTION_UP:
+          // Shift mY up two tiles.
+          midTileY -= 2;
+          break;
+        case DIRECTION_DOWN:
+          // Shift mY down two tiles.
+          midTileY += 2;
+          break;
+        case DIRECTION_RIGHT:
+          // Shift mX right two tiles.
+          midTileX += 2;
+          break;
+        default:
+          break;
+      }
+      // Get where blinky is.
+      int blinkyTileX = (blinky_->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
+      int blinkyTileY = (blinky_->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
+      
+      // Inky's target tile follows this math.
+      // Inky's target tile, the midpoint tile, and blinky's current tile,
+      // form a straight line segment, where the midpoint tile is equidistant
+      // from the other two tiles.
+      targetTileX = (2 * midTileX) - blinkyTileX;
+      targetTileY = (2 * midTileY) - blinkyTileY;
+    }
+    moveGhost(inky_, targetTileX, targetTileY);
+    
+    // Moving Pinky. Target is in front of PACMAN,
+    // So that we can attack PACMAN from in front.
+    if (pinky_->getIsEaten()) {
+      // Head back to the entrance of the home base,
+      // Which is where Blinky starts at start of game.
+      targetTileX = blinky_->getStartTileX();
+      targetTileY = blinky_->getStartTileY();
+    } else if (pinky_->getIsScatter()) {
+      // Target the top left corner.
+      targetTileX = 2;
+      targetTileY = 0;
+    } else /* if (pinky_->getIsChase()) */ {
+      // Head for four tiles in front of PACMAN,
+      // so we can attack PACMAN from in front.
+      targetTileX = pacmanTileX;
+      targetTileY = pacmanTileY;
+      switch (pacman_->getDirection()) {
+        case DIRECTION_LEFT:
+          // Shift tX left four tiles.
+          targetTileX -= 4;
+          break;
+        case DIRECTION_UP:
+          // Shift tY up four tiles.
+          targetTileY -= 4;
+          break;
+        case DIRECTION_DOWN:
+          // Shift tY down four tiles.
+          targetTileY += 4;
+          break;
+        case DIRECTION_RIGHT:
+          // Shift tX right four tiles.
+          targetTileX += 4;
+          break;
+        default:
+          break;
+      }
+    }
+    moveGhost(pinky_, targetTileX, targetTileY);
+    
+    // Moving Clyde. Target is PACMAN, until get close
+    // then start running away into Clyde's corner.
+    if (clyde_->getIsEaten()) {
+      // Head back to the entrance of the home base,
+      // Which is where Blinky starts at start of game.
+      targetTileX = blinky_->getStartTileX();
+      targetTileY = blinky_->getStartTileY();
+    } else if (clyde_->getIsScatter()) {
+      // Target the bottom left corner.
+      targetTileX = 0;
+      targetTileY = boardHeight_ - 2;
+    } else /* if (clyde_->getIsChase()) */ {
+      // Head for PACMAN, until we are within 8 tiles of
+      // distance from PACMAN, where we then start running
+      // away from PACMAN into our corner. PACMAN will be
+      // very confused!!!
+      int clydeTileX = (clyde_->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
+      int clydeTileY = (clyde_->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
+      int distanceFromPacman = (int)sqrt(pow(clydeTileX - pacmanTileX,2) +
+                                         pow(clydeTileY - pacmanTileY,2));
+      if (distanceFromPacman >= (8 * TILE_SIZE)) {
+        // When far away from PACMAN, chase PACMAN.
+        targetTileX = pacmanTileX;
+        targetTileY = pacmanTileY;
+      } else {
+        // And when get close to PACMAN, run
+        // away from PACMAN into corner.
+        targetTileX = 0;
+        targetTileY = boardHeight_ - 2;
+      }
+    }
+    moveGhost(clyde_, targetTileX, targetTileY);
   }
-  moveGhost(blinky_, targetTileX, targetTileY);
-  
-  // TODO: Moving Inky. Target is...
-  // TODO: TODO: TODO: TODO: 2 (should be also pretty easy).
-  if (inky_->getIsEaten()) {
-    // Head back to the entrance of the home base,
-    // Which is where Blinky starts at start of game.
-    targetTileX = blinky_->getStartTileX();
-    targetTileY = blinky_->getStartTileY();
-  } else if (inky_->getIsScatter()) {
-    // Target this ghost's corner of the map.
-  } else /* if (inky_->getIsChase()) */ {
-    // Head for this ghost's chase target on the map.
-  }
-  moveGhost(inky_, targetTileX, targetTileY);
-  
-  // TODO: Moving Pinky. Target is...
-  if (pinky_->getIsEaten()) {
-    // Head back to the entrance of the home base,
-    // Which is where Blinky starts at start of game.
-    targetTileX = blinky_->getStartTileX();
-    targetTileY = blinky_->getStartTileY();
-  } else if (pinky_->getIsScatter()) {
-    // Target this ghost's corner of the map.
-  } else /* if (pinky_->getIsChase()) */ {
-    // Head for this ghost's chase target on the map.
-  }
-  moveGhost(pinky_, targetTileX, targetTileY);
-  
-  // TODO: Moving Clyde. Target is...
-  if (clyde_->getIsEaten()) {
-    // Head back to the entrance of the home base,
-    // Which is where Blinky starts at start of game.
-    targetTileX = blinky_->getStartTileX();
-    targetTileY = blinky_->getStartTileY();
-  } else if (clyde_->getIsScatter()) {
-    // Target this ghost's corner of the map.
-  } else /* if (clyde_->getIsChase()) */ {
-    // Head for this ghost's chase target on the map.
-  }
-  moveGhost(clyde_, targetTileX, targetTileY);
   
   // Frame is finished. Drain PACMAN of one frame of power.
   if (pacman_->getPower() > 0) {
@@ -811,7 +901,7 @@ bool Game::update(Direction newDirection)
     for (int i = 0; i < 4; i++) {
       Actor *ghost = ghosts[i];
       if (ghost->getIsFrightened()) {
-        ghosts[i]->setChaseOrScatter();
+        setChaseOrScatter(ghost);
       }
     }
   }
