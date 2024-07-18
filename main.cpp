@@ -23,7 +23,9 @@ int main(int argc, char *argv[])
     level = new Level();
 
     // Run default level.
-    game->run(level);
+    if (!game->run(level)) {
+      printf("Failed to run game! Memory allocation error!\n");
+    }
   }
   
   // Game is over. Free resources.

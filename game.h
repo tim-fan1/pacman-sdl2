@@ -32,8 +32,10 @@ class Game {
     
     /**
      * Start running game, initially rendering the given level.
+     *
+     * \Returns If game started running successfully.
      */
-    void run(Level *level);
+    bool run(Level *level);
     
   private:
     void gameOver(bool isWin);
@@ -120,6 +122,13 @@ class Game {
     int portalTwoX;
     int portalTwoY;
     Timer *timer_;
+    int *modes_;           // How long to stay in each mode:
+    int currentModeIndex_; // Even indices is Scatter mode,
+                           // Odd indices is Chase mode.
+    bool currentMode_;     // The current mode all out-of-base alive
+                           // ghosts should be in on this frame.
+                           // false is Scatter mode,
+                           // true is Chase mode.
     
     // How long each frame should take in ms.
     static const Uint32 FRAME_TIME = 20;

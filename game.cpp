@@ -26,6 +26,9 @@ Game::Game()
   portalOneY = -1;
   portalTwoX = -1;
   portalTwoY = -1;
+  modes_ = NULL;
+  currentModeIndex_ = 0;
+  currentMode_ = false;
 
   bool success = true;
   
@@ -103,12 +106,26 @@ bool Game::getSDLInitSuccess()
   return success_;
 }
 
-void Game::run(Level *level)
+bool Game::run(Level *level)
 {
   /* Initialising game state. */
 
   // rand() is only used for frightened ghosts.
   srand((unsigned int)time(NULL));
+  
+  // Used by ghosts to find out how long to wait in current mode before switching.
+  modes_ = (int *)malloc(8 * sizeof(int));
+  if (modes_ == NULL) {
+    printf("Failed to allocate memory for list of mode switching times!\n");
+    return false;
+  }
+  modes_[0] = 7; modes_[1] = 20; // Wave 1.
+  modes_[2] = 7; modes_[3] = 20; // Wave 2.
+  modes_[4] = 5; modes_[5] = 20; // Wave 3.
+  modes_[6] = 5; modes_[7] = -1; // Endless Wave.
+  
+  // Initialise timer used to track when to mode switch.
+  timer_ = new Timer();
   
   // Walk through level text to build board and
   // place actors at their starting positions.
@@ -116,8 +133,16 @@ void Game::run(Level *level)
   boardWidth_ = level->getWidth();
   std::string levelText = level->getLevelText();
   board_ = (TileType **)malloc(boardWidth_ * sizeof(TileType *));
+  if (board_ == NULL) {
+    printf("Failed to allocate memory for board of tiles!\n");
+    return false;
+  }
   for (int x = 0; x < boardWidth_; x++) {
     board_[x] = (TileType *)malloc(boardHeight_ * sizeof(TileType));
+    if (board_[x] == NULL) {
+      printf("Failed to allocate memory for row of tiles!\n");
+      return false;
+    }
   }
   for (int y = 0; y < boardHeight_; y++) {
     for (int x = 0; x < boardWidth_; x++) {
@@ -278,7 +303,7 @@ void Game::run(Level *level)
   /* Exit game loop. */
   
   // Control reaches here when user has quit the application.
-  return;
+  return true;
 }
 
 void Game::gameOver(bool isWin)
@@ -289,6 +314,10 @@ void Game::gameOver(bool isWin)
 
 bool Game::isCollidingWithActor(Actor *actorA, Actor *actorB)
 {
+  if (actorA == pacman_ || actorB == pacman_) {
+    return false;
+  }
+
   int aTileX = (actorA->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
   int aTileY = (actorA->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
   int bTileX = (actorB->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
@@ -535,8 +564,11 @@ bool Game::moveGhostForwardWithCollision(Actor *ghost)
 
 void Game::setChaseOrScatter(Actor *ghost)
 {
-  // TODO: TODO: TODO: Implement me using timer!
-  ghost->setIsChase();
+  if (currentMode_ == false) {
+    ghost->setIsScatter();
+  } else {
+    ghost->setIsChase();
+  }
 }
 
 void Game::moveGhost(Actor *ghost, int targetTileX, int targetTileY)
@@ -741,9 +773,34 @@ bool Game::update(Direction newDirection)
   
   // Game starts when PACMAN starts moving. Don't
   // move ghosts if PACMAN hasn't started moving.
-  if (pacman_->getDirection() != DIRECTION_NONE) {
+  if (pacman_->getDirection() == DIRECTION_NONE) {
+    currentMode_ = false; // Ghosts start off in Scatter mode.
+    currentModeIndex_ = 0;
+  } else /* if (pacman_->getDirection() != DIRECTION_NONE) */ {
     if (!timer_->isRunning()) {
+      // We start the timer for the first time when we know
+      // for sure that Player has started controlling PACMAN.
       timer_->start();
+    } else /* if (timer_->isRunning()) */ {
+      // Check if ghosts should be mode switching on this frame using timer.
+      if (modes_[currentModeIndex_] == -1) {
+        // Ghosts should be staying in chase mode on this frame.
+        currentMode_ = true;
+        printf("endless wave!\n");
+      } else if (timer_->getTimePassedSecs() > modes_[currentModeIndex_]) {
+        // Ghosts should switch to opposite mode on this frame.
+        currentModeIndex_++;
+        currentMode_ = !currentMode_;
+        printf("mode switch! ");
+        if (currentMode_) {
+          printf("chase!\n");
+        } else {
+          printf("scatter!\n");
+        }
+        // Re-Start timer to count how long the new mode should last.
+        timer_->stop();
+        timer_->start();
+      }
     }
     int pacmanTileX = (pacman_->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
     int pacmanTileY = (pacman_->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
