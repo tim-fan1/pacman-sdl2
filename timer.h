@@ -6,13 +6,20 @@
 class Timer {
 
 public:
+  Timer();
+  ~Timer();
   bool isRunning();
   int getTimePassedSecs();
+  void start();
   void stop();
   void pause();
-  void start();
+  void unpause();
 private:
-  int count_;
+  int startTicks_;
+  int pausedTicks_;
+  
+  bool isPaused_;
+  bool isStarted_;
 };
 
 #endif /* timer_h */
