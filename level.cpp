@@ -45,7 +45,6 @@ Level::Level()
   width_ = 28;
   height_ = 36;
   
-  
   levelText_ = defaultLevelText;
 }
 

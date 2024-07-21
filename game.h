@@ -89,12 +89,14 @@ class Game {
     void drawPacman();
     
     /**
-     * Clip the spritesheet using given clip, and
-     * draw that sprite at (x,y) on our window --
-     * add to our renderer's buffer -- stretched
-     * to be width w and height h.
+     * Clip the appropriate spritesheet using given clip,
+     * and draw that sprite at (x,y) on our window.
      */
-    bool drawSprite(SDL_Rect *clip, int x, int y, int w, int h);
+    bool drawSprite(SDL_Rect *clip, int x, int y);
+
+    void drawWall(int x, int y);
+    void drawPowerPellet(int x, int y);
+    void drawPellet(int x, int y);
 
     // SDL init success.
     bool success_;
@@ -131,17 +133,10 @@ class Game {
                            // true is Chase mode.
     
     // How long each frame should take in ms.
-    static const Uint32 FRAME_TIME = 20;
+    static const Uint32 FRAME_TIME = 16.7;
     static const Uint32 TILE_SIZE = 24;
-    
-    // TODO: remove these.
-    void drawRed(int x, int y, int w, int h);
-    void drawYellow(int x, int y, int w, int h);
-    void drawBlue(int x, int y, int w, int h);
-    void drawGreen(int x, int y, int w, int h);
-    void drawGrey(int x, int y, int w, int h);
-    void drawDarkGrey(int x, int y, int w, int h);
-    void drawWhite(int x, int y, int w, int h);
+
+
 };
 
 #endif /* game_h */

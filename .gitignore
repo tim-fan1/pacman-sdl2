@@ -1,4 +1,10 @@
+### xcode-specific files ###
 *.entitlements
 *.xcassets
 *.lproj
+
+### macOS-specific file ###
 .DS_Store
+
+### GIMP files for drawing graphics ###
+*.xcf

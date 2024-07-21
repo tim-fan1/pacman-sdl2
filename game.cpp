@@ -65,7 +65,7 @@ Game::Game()
   // Get spritesheet image.
   SDL_Surface *tempSurface = NULL;
   if (success) {
-    tempSurface = IMG_Load("/dots.png");
+    tempSurface = IMG_Load("/spritesheet.png");
     if (tempSurface == NULL) {
       printf("Failed to load image!\n");
       success = false;
@@ -74,8 +74,6 @@ Game::Game()
   
   // And convert to texture.
   if (success) {
-    SDL_SetColorKey(tempSurface, SDL_TRUE,
-                    SDL_MapRGB(tempSurface->format, 0, 0xFF, 0xFF));
     spritesheet_ = SDL_CreateTextureFromSurface(renderer_, tempSurface);
     if (spritesheet_ == NULL) {
       printf("Failed to convert image to texture! SDL Error: %s\n",
@@ -296,6 +294,8 @@ bool Game::run(Level *level)
       // In case we took too long to update and render on this frame.
       printf("we are slowwwww\n");
       delay = 0;
+    } else {
+      printf("delay: %d\n", delay);
     }
     SDL_Delay(delay);
   }
@@ -314,10 +314,6 @@ void Game::gameOver(bool isWin)
 
 bool Game::isCollidingWithActor(Actor *actorA, Actor *actorB)
 {
-  if (actorA == pacman_ || actorB == pacman_) {
-    return false;
-  }
-
   int aTileX = (actorA->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
   int aTileY = (actorA->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
   int bTileX = (actorB->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
@@ -415,7 +411,7 @@ bool Game::movePacmanForwardWithCollision()
             Actor *ghosts[4] = { blinky_, inky_, pinky_, clyde_ };
             for (int i = 0; i < 4; i++) {
               Actor *ghost = ghosts[i];
-              if (!ghost->getIsFindingExit() && !ghost->getIsFindingSpot()) {
+              if (ghost->getIsChase() || ghost->getIsScatter()) {
                 ghost->setIsFrightened();
                 ghost->turnAround();
               }
@@ -979,17 +975,17 @@ void Game::render()
         case TILE_NONE:
           break;
         case TILE_WALL:
-          drawRed(i * TILE_SIZE, j * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+          drawWall(i * TILE_SIZE, j * TILE_SIZE);
           break;
         case TILE_POWER_PELLET:
-          drawBlue(i * TILE_SIZE, j * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+          drawPowerPellet(i * TILE_SIZE, j * TILE_SIZE);
           break;
         case TILE_PELLET:
-          drawGreen(i * TILE_SIZE, j * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+          drawPellet(i * TILE_SIZE, j * TILE_SIZE);
           break;
         case TILE_GATE:
         case TILE_BASE:
-          drawGrey(i * TILE_SIZE, j * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+//          drawWall(i * TILE_SIZE, j * TILE_SIZE);
           break;
         case TILE_PORTAL:
           break;
@@ -1024,97 +1020,147 @@ void Game::render()
   return;
 }
 
-void Game::drawGhost(Actor *ghost)
-{
-  if (ghost == pinky_) {
-    drawYellow(ghost->getX(), ghost->getY(), TILE_SIZE, TILE_SIZE);
-    return;
+/* Taking from the 48px spritesheet. */
+
+void Game::drawPacman() {
+  drawPowerPellet(pacman_->getX(), pacman_->getY());
+
+}
+
+void Game::drawGhost(Actor *ghost) {
+  SDL_Rect srcrect = { .x = 0, .y = 48, .w = 48, .h = 48 };
+  if (!ghost->getIsEaten()) {
+    if (ghost == blinky_) {
+      srcrect.x += (0 * 48);
+    } else if (ghost == inky_) {
+      srcrect.x += (1 * 48);
+    } else if (ghost == pinky_) {
+      srcrect.x += (2 * 48);
+    } else {
+      srcrect.x += (3 * 48);
+    }
+    drawSprite(&srcrect, ghost->getX() - (TILE_SIZE / 2), ghost->getY() - (TILE_SIZE / 2));
   }
-  if (ghost->getIsEaten()) {
-    drawWhite(
-      ghost->getX(),
-      ghost->getY(),
-      TILE_SIZE , TILE_SIZE
-    );
+  
+  srcrect = { .x = 0, .y = 0, .w = 48, .h = 48 };
+  if (ghost->getDirection() == DIRECTION_UP) {
+    srcrect.x += (1 * 48);
+  } else if (ghost->getDirection() == DIRECTION_LEFT) {
+    srcrect.x += (3 * 48);
+  } else if (ghost->getDirection() == DIRECTION_RIGHT) {
+    srcrect.x += (4 * 48);
   } else {
-    drawDarkGrey(
-      ghost->getX(),
-      ghost->getY(),
-      TILE_SIZE , TILE_SIZE
-    );
+    srcrect.x += (2 * 48);
   }
+  drawSprite(&srcrect, ghost->getX() - (TILE_SIZE / 2), ghost->getY() - (TILE_SIZE / 2));
 }
 
-void Game::drawPacman()
+/* Taking from the 24px spritesheet. */
+
+void Game::drawWall(int x, int y)
 {
-  if (pacman_->getPower() > 0) {
-    drawRed(
-      pacman_->getX() - (TILE_SIZE / 2),
-      pacman_->getY() - (TILE_SIZE / 2),
-      TILE_SIZE * 2, TILE_SIZE * 2
-    );
-  } else {
-    drawYellow(
-      pacman_->getX() - (TILE_SIZE / 2),
-      pacman_->getY() - (TILE_SIZE / 2),
-      TILE_SIZE * 2, TILE_SIZE * 2
-    );
+  SDL_Rect srcrect = { .x = (8 * 48), .y = 0, .w = 24, .h = 24 };
+  // TODO: do a better properly working drawing wall algorithm.
+  int tileX = x / TILE_SIZE; int tileY = y / TILE_SIZE;
+  
+  // Get the indices of the adjacent tiles.
+  int upTileX = tileX; int upTileY = tileY - 1;
+  int downTileX = tileX; int downTileY = tileY + 1;
+  int leftTileX = tileX - 1; int leftTileY = tileY;
+  int rightTileX = tileX + 1; int rightTileY = tileY;
+  
+  // Make sure none are out of bounds.
+  assert(board_[0][0] == TILE_NONE);
+  if (upTileY < 0) {
+    upTileX = 0;
+    upTileY = 0;
   }
+  if (downTileY > boardHeight_ - 1) {
+    downTileX = 0;
+    downTileY = 0;
+  }
+  if (leftTileX < 0) {
+    leftTileX = 0;
+    leftTileY = 0;
+  }
+  if (rightTileX > boardWidth_ - 1) {
+    rightTileX = 0;
+    rightTileY = 0;
+  }
+
+  // Get the type of each adjacent tile.
+  TileType upTile = board_[upTileX][upTileY];
+  TileType downTile = board_[downTileX][downTileY];
+  TileType leftTile = board_[leftTileX][leftTileY];
+  TileType rightTile = board_[rightTileX][rightTileY];
+  
+  if (leftTile == TILE_WALL && rightTile == TILE_WALL) {
+    // Drawing walls.
+    srcrect.x += 48;
+    if (upTile != TILE_WALL) {
+      // Draw bottom wall.
+      srcrect.x += 24;
+      srcrect.y += 24;
+    } else if (downTile != TILE_WALL) {
+      // Draw top wall.
+      srcrect.x += 0;
+      srcrect.y += 0;
+    }
+  } else if (upTile == TILE_WALL && downTile == TILE_WALL) {
+    // Drawing walls.
+    srcrect.x += 48;
+    if (leftTile != TILE_WALL) {
+      // Draw right wall.
+      srcrect.x += 24;
+      srcrect.y += 0;
+    } else if (rightTile != TILE_WALL) {
+      // Draw left wall.
+      srcrect.x += 0;
+      srcrect.y += 24;
+    }
+  } else if (downTile == TILE_WALL) {
+    // Drawing corners.
+    srcrect.x += 0;
+    if (rightTile == TILE_WALL) {
+      // Drawing top-left corner.
+      srcrect.x += 0;
+      srcrect.y += 0;
+    } else if (leftTile == TILE_WALL) {
+      // Drawing top-right corner.
+      srcrect.x += 24;
+      srcrect.y += 0;
+    }
+  } else if (upTile == TILE_WALL) {
+    // Drawing corners.
+    srcrect.x += 0;
+    if (rightTile == TILE_WALL) {
+      // Drawing bottom-left corner.
+      srcrect.x += 0;
+      srcrect.y += 24;
+    } else if (leftTile == TILE_WALL) {
+      // Drawing bottom-right corner.
+      srcrect.x += 24;
+      srcrect.y += 24;
+    }
+  }
+  drawSprite(&srcrect, x, y);
 }
 
-void Game::drawRed(int x, int y, int w, int h)
+void Game::drawPellet(int x, int y)
 {
-  SDL_Rect rect = { .x = x, .y = y, .w = w, .h = h };
-  SDL_SetRenderDrawColor(renderer_, 0xDD, 0x00, 0x00, 0xFF);
-  SDL_RenderFillRect(renderer_, &rect);
-  SDL_RenderDrawRect(renderer_, &rect);
+  SDL_Rect srcrect = { .x = (5 * 48), .y = 0, .w = 24, .h = 24 };
+  drawSprite(&srcrect, x, y);
 }
 
-void Game::drawGrey(int x, int y, int w, int h)
+void Game::drawPowerPellet(int x, int y)
 {
-  SDL_Rect rect = { .x = x, .y = y, .w = w, .h = h };
-  SDL_SetRenderDrawColor(renderer_, 0xCC, 0xCC, 0xCC, 0xFF);
-  SDL_RenderFillRect(renderer_, &rect);
-  SDL_RenderDrawRect(renderer_, &rect);
+  SDL_Rect srcrect = { .x = (5 * 48) + (24), .y = 0, .w = 24, .h = 24 };
+  drawSprite(&srcrect, x, y);
 }
 
-void Game::drawWhite(int x, int y, int w, int h)
-{
-  SDL_Rect rect = { .x = x, .y = y, .w = w, .h = h };
-  SDL_SetRenderDrawColor(renderer_, 0xFF, 0xFF, 0xFF, 0xFF);
-  SDL_RenderFillRect(renderer_, &rect);
-  SDL_RenderDrawRect(renderer_, &rect);
-}
+/* Helper function to draw from different spritesheets. */
 
-void Game::drawDarkGrey(int x, int y, int w, int h)
-{
-  SDL_Rect rect = { .x = x, .y = y, .w = w, .h = h };
-  SDL_SetRenderDrawColor(renderer_, 0x55, 0x55, 0x55, 0xFF);
-  SDL_RenderFillRect(renderer_, &rect);
-  SDL_RenderDrawRect(renderer_, &rect);
-}
-
-void Game::drawYellow(int x, int y, int w, int h)
-{
-  SDL_Rect rect = { .x = x, .y = y, .w = w, .h = h };
-  SDL_SetRenderDrawColor(renderer_, 0x00, 0xFF, 0xFF, 0xFF);
-  SDL_RenderFillRect(renderer_, &rect);
-  SDL_RenderDrawRect(renderer_, &rect);
-}
-
-void Game::drawBlue(int x, int y, int w, int h)
-{
-  SDL_Rect srcrect = { .x = 100, .y = 100, .w = 100, .h = 100 };
-  drawSprite(&srcrect, x, y, w, h);
-}
-
-void Game::drawGreen(int x, int y, int w, int h)
-{
-  SDL_Rect srcrect = { .x = 100, .y = 0, .w = 100, .h = 100 };
-  drawSprite(&srcrect, x, y, w, h);
-}
-
-bool Game::drawSprite(SDL_Rect *clip, int x, int y, int w, int h)
+bool Game::drawSprite(SDL_Rect *clip, int x, int y)
 {
   assert(clip != NULL);
   
@@ -1132,7 +1178,7 @@ bool Game::drawSprite(SDL_Rect *clip, int x, int y, int w, int h)
   // screen, stretched to be width w and height h.
   SDL_Rect dstrect = {
     .x = x, .y = y,
-    .w = w, .h = h
+    .w = clip->w, .h = clip->h
   };
   
   // Copy the sprite into our renderer's buffer.
@@ -1144,3 +1190,4 @@ bool Game::drawSprite(SDL_Rect *clip, int x, int y, int w, int h)
   
   return success;
 }
+
