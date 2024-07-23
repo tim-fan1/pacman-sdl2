@@ -975,6 +975,7 @@ void Game::render()
         case TILE_NONE:
           break;
         case TILE_WALL:
+          // TODO: Fix wall drawing algorithm.
           drawWall(i * TILE_SIZE, j * TILE_SIZE);
           break;
         case TILE_POWER_PELLET:
@@ -984,9 +985,8 @@ void Game::render()
           drawPellet(i * TILE_SIZE, j * TILE_SIZE);
           break;
         case TILE_GATE:
+          // TODO: Draw gate tiles.
         case TILE_BASE:
-//          drawWall(i * TILE_SIZE, j * TILE_SIZE);
-          break;
         case TILE_PORTAL:
           break;
         default:
@@ -1023,8 +1023,18 @@ void Game::render()
 /* Taking from the 48px spritesheet. */
 
 void Game::drawPacman() {
-  drawPowerPellet(pacman_->getX(), pacman_->getY());
-
+  SDL_Rect srcrect = { .x = (4 * 48), .y = 48, .w = 48, .h = 48 };
+  double angle = 0;
+  if (pacman_->getDirection() == DIRECTION_UP) {
+    angle = 270;
+  } else if (pacman_->getDirection() == DIRECTION_DOWN) {
+    angle = 90;
+  } else if (pacman_->getDirection() == DIRECTION_LEFT) {
+    angle = 180;
+  } else {
+    angle = 0;
+  }
+  drawSprite(&srcrect, pacman_->getX() - (TILE_SIZE / 2), pacman_->getY() - (TILE_SIZE / 2), angle);
 }
 
 void Game::drawGhost(Actor *ghost) {
@@ -1056,6 +1066,11 @@ void Game::drawGhost(Actor *ghost) {
 }
 
 /* Taking from the 24px spritesheet. */
+
+void Game::drawGate(int x, int y)
+{
+  // TODO: draw gate tile.
+}
 
 void Game::drawWall(int x, int y)
 {
@@ -1160,7 +1175,7 @@ void Game::drawPowerPellet(int x, int y)
 
 /* Helper function to draw from different spritesheets. */
 
-bool Game::drawSprite(SDL_Rect *clip, int x, int y)
+bool Game::drawSprite(SDL_Rect *clip, int x, int y, double angle)
 {
   assert(clip != NULL);
   
@@ -1182,7 +1197,7 @@ bool Game::drawSprite(SDL_Rect *clip, int x, int y)
   };
   
   // Copy the sprite into our renderer's buffer.
-  if (SDL_RenderCopy(renderer_, spritesheet_, &srcrect, &dstrect) != 0) {
+  if (SDL_RenderCopyEx(renderer_, spritesheet_, &srcrect, &dstrect, angle, NULL, SDL_FLIP_NONE) != 0) {
     success = false;
     printf("Failed to render sprite at (%d,%d)! SDL Error: %s\n",
            x, y, SDL_GetError());
