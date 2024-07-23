@@ -85,18 +85,18 @@ class Game {
     void render();
     
     void drawGhost(Actor *ghost);
-    
     void drawPacman();
+    
+    void drawGate(int x, int y);
+    void drawWall(int x, int y);
+    void drawPowerPellet(int x, int y);
+    void drawPellet(int x, int y);
     
     /**
      * Clip the appropriate spritesheet using given clip,
      * and draw that sprite at (x,y) on our window.
      */
-    bool drawSprite(SDL_Rect *clip, int x, int y);
-
-    void drawWall(int x, int y);
-    void drawPowerPellet(int x, int y);
-    void drawPellet(int x, int y);
+    bool drawSprite(SDL_Rect *clip, int x, int y, double angle = 0);
 
     // SDL init success.
     bool success_;
