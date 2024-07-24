@@ -85,8 +85,8 @@ class Actor {
     void setIsFindingExit();
     
     // At start of game, how long to wait until start to leave home.
-    int getWaitingFrames();
-    void setWaitingFrames(int waitingFrames);
+    int getWaitingPellets();
+    void setWaitingPellets(int waitingPellets);
     
     void setSpeed(int speed);
     
@@ -114,8 +114,8 @@ class Actor {
     /* For ghosts. */
     GHOST_STATE state_;
     
-    // How many more frames does this ghost have to wait inside home base?
-    int waitingFrames_;
+    // How many more pellets eaten does this ghost have to wait inside home base?
+    int waitingPellets_;
     
     // Where should this ghost go inside the home base when return to base.
     int inBaseTileX_;
