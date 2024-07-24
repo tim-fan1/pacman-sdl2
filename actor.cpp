@@ -1,5 +1,6 @@
 #include "actor.h"
 #include <cassert>
+#include <cstdio>
 
 Actor::Actor(int tileX, int tileY, int tileSize, int waitingFrames,
              int inBaseTileX, int inBaseTileY, int speed)
@@ -18,7 +19,12 @@ Actor::Actor(int tileX, int tileY, int tileSize, int waitingFrames,
   startTileX_ = tileX;
   startTileY_ = tileY;
   
+  targetTileX_ = -1;
+  targetTileY_ = -1;
+  
   power_ = 0;
+  
+  state_ = GHOST_NONE;
 }
 
 Actor::~Actor() {}
@@ -51,6 +57,26 @@ void Actor::setTileX(int tileX)
 void Actor::setTileY(int tileY)
 {
   y_ = tileY * tileSize_;
+}
+
+int Actor::getTargetTileX()
+{
+  return targetTileX_;
+}
+
+int Actor::getTargetTileY()
+{
+  return targetTileY_;
+}
+
+void Actor::setTargetTileX(int targetTileX)
+{
+  targetTileX_ = targetTileX;
+}
+
+void Actor::setTargetTileY(int targetTileY)
+{
+  targetTileY_ = targetTileY;
 }
 
 Direction Actor::getDirection()
@@ -194,5 +220,24 @@ void Actor::moveBackward()
     x_ += speed_;
   } else if (direction_ == DIRECTION_RIGHT) {
     x_ -= speed_;
+  }
+}
+
+void Actor::printState()
+{
+  if (state_ == GHOST_NONE) {
+    printf("none\n");
+  } else if (getIsChase()) {
+    printf("chase\n");
+  } else if (getIsScatter()) {
+    printf("scatter\n");
+  } else if (getIsFrightened()) {
+    printf("frightened\n");
+  } else if (getIsEaten()) {
+    printf("eaten\n");
+  } else if (getIsFindingExit()) {
+    printf("exit\n");
+  } else if (getIsFindingSpot()) {
+    printf("spot\n");
   }
 }

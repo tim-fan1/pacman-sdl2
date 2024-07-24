@@ -314,6 +314,7 @@ void Game::gameOver(bool isWin)
 
 bool Game::isCollidingWithActor(Actor *actorA, Actor *actorB)
 {
+//  if (actorA == pacman_ || actorB == pacman_) return false;
   int aTileX = (actorA->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
   int aTileY = (actorA->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
   int bTileX = (actorB->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
@@ -569,6 +570,8 @@ void Game::setChaseOrScatter(Actor *ghost)
 
 void Game::moveGhost(Actor *ghost, int targetTileX, int targetTileY)
 {
+  ghost->setTargetTileX(targetTileX);
+  ghost->setTargetTileY(targetTileY);
   int ghostTileX = (ghost->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
   int ghostTileY = (ghost->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
 
@@ -813,10 +816,19 @@ bool Game::update(Direction newDirection)
       // Target the top right corner.
       targetTileX = boardWidth_ - 3;
       targetTileY = 0;
-    } else /* if (blinky_->getIsChase()) */ {
+    } else if (blinky_->getIsChase()) {
       // Head for PACMAN!
       targetTileX = pacmanTileX;
       targetTileY = pacmanTileY;
+    } else if (blinky_->getIsFindingExit()) {
+      targetTileX = blinky_->getStartTileX();
+      targetTileX = blinky_->getStartTileY();
+    } else if (blinky_->getIsFindingSpot()) {
+      targetTileX = blinky_->getSpotInBaseX();
+      targetTileY = blinky_->getSpotInBaseY();
+    } else /* if (blinky_->getIsFrightened()) */ {
+      targetTileX = -1;
+      targetTileY = -1;
     }
     moveGhost(blinky_, targetTileX, targetTileY);
     
@@ -830,7 +842,7 @@ bool Game::update(Direction newDirection)
       // Target the bottom right corner.
       targetTileX = boardWidth_ - 1;
       targetTileY = boardHeight_ - 2;
-    } else /* if (inky_->getIsChase()) */ {
+    } else if (inky_->getIsChase()) {
       // Head for behind PACMAN so that we can flank PACMAN with Blinky!
       // Get the tile two tiles in front of PACMAN, this will be the midpoint.
       int midTileX = pacmanTileX;
@@ -865,6 +877,15 @@ bool Game::update(Direction newDirection)
       // from the other two tiles.
       targetTileX = (2 * midTileX) - blinkyTileX;
       targetTileY = (2 * midTileY) - blinkyTileY;
+    } else if (inky_->getIsFindingExit()) {
+      targetTileX = blinky_->getStartTileX();
+      targetTileX = blinky_->getStartTileY();
+    } else if (inky_->getIsFindingSpot()) {
+      targetTileX = inky_->getSpotInBaseX();
+      targetTileY = inky_->getSpotInBaseY();
+    } else /* if (inky_->getIsFrightened()) */ {
+      targetTileX = -1;
+      targetTileY = -1;
     }
     moveGhost(inky_, targetTileX, targetTileY);
     
@@ -879,7 +900,7 @@ bool Game::update(Direction newDirection)
       // Target the top left corner.
       targetTileX = 2;
       targetTileY = 0;
-    } else /* if (pinky_->getIsChase()) */ {
+    } else if (pinky_->getIsChase()) {
       // Head for four tiles in front of PACMAN,
       // so we can attack PACMAN from in front.
       targetTileX = pacmanTileX;
@@ -904,6 +925,15 @@ bool Game::update(Direction newDirection)
         default:
           break;
       }
+    } else if (pinky_->getIsFindingExit()) {
+      targetTileX = blinky_->getStartTileX();
+      targetTileX = blinky_->getStartTileY();
+    } else if (pinky_->getIsFindingSpot()) {
+      targetTileX = pinky_->getSpotInBaseX();
+      targetTileY = pinky_->getSpotInBaseY();
+    } else /* if (pinky_->getIsFrightened()) */ {
+      targetTileX = -1;
+      targetTileY = -1;
     }
     moveGhost(pinky_, targetTileX, targetTileY);
     
@@ -918,16 +948,16 @@ bool Game::update(Direction newDirection)
       // Target the bottom left corner.
       targetTileX = 0;
       targetTileY = boardHeight_ - 2;
-    } else /* if (clyde_->getIsChase()) */ {
+    } else if (clyde_->getIsChase()) {
       // Head for PACMAN, until we are within 8 tiles of
       // distance from PACMAN, where we then start running
       // away from PACMAN into our corner. PACMAN will be
       // very confused!!!
       int clydeTileX = (clyde_->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
       int clydeTileY = (clyde_->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
-      int distanceFromPacman = (int)sqrt(pow(clydeTileX - pacmanTileX,2) +
-                                         pow(clydeTileY - pacmanTileY,2));
-      if (distanceFromPacman >= (8 * TILE_SIZE)) {
+      int distanceFromPacman = (int)sqrt(pow(clydeTileX - pacmanTileX, 2) +
+                                         pow(clydeTileY - pacmanTileY, 2));
+      if (distanceFromPacman >= 8) {
         // When far away from PACMAN, chase PACMAN.
         targetTileX = pacmanTileX;
         targetTileY = pacmanTileY;
@@ -937,6 +967,15 @@ bool Game::update(Direction newDirection)
         targetTileX = 0;
         targetTileY = boardHeight_ - 2;
       }
+    } else if (clyde_->getIsFindingExit()) {
+      targetTileX = blinky_->getStartTileX();
+      targetTileX = blinky_->getStartTileY();
+    } else if (clyde_->getIsFindingSpot()) {
+      targetTileX = clyde_->getSpotInBaseX();
+      targetTileY = clyde_->getSpotInBaseY();
+    } else /* if (clyde_->getIsFrightened()) */ {
+      targetTileX = -1;
+      targetTileY = -1;
     }
     moveGhost(clyde_, targetTileX, targetTileY);
   }
@@ -985,7 +1024,8 @@ void Game::render()
           drawPellet(i * TILE_SIZE, j * TILE_SIZE);
           break;
         case TILE_GATE:
-          // TODO: Draw gate tiles.
+          drawGate(i * TILE_SIZE, j * TILE_SIZE);
+          break;
         case TILE_BASE:
         case TILE_PORTAL:
           break;
@@ -998,10 +1038,10 @@ void Game::render()
   
   // Draw actors into buffer, on top of board.
   drawPacman();
+  drawGhost(blinky_);
   drawGhost(inky_);
   drawGhost(pinky_);
   drawGhost(clyde_);
-  drawGhost(blinky_);
   
   // And draw game over text on top, if is game over.
   // TODO: Make the game over screen nicer.
@@ -1038,6 +1078,7 @@ void Game::drawPacman() {
 }
 
 void Game::drawGhost(Actor *ghost) {
+  // Drawing ghost sprite.
   SDL_Rect srcrect = { .x = 0, .y = 48, .w = 48, .h = 48 };
   if (!ghost->getIsEaten()) {
     if (ghost == blinky_) {
@@ -1052,6 +1093,22 @@ void Game::drawGhost(Actor *ghost) {
     drawSprite(&srcrect, ghost->getX() - (TILE_SIZE / 2), ghost->getY() - (TILE_SIZE / 2));
   }
   
+  // Drawing target tile on screen for debugging.
+  // FIXME: Remove me! Is buggy (target tile is wrong when ghost first leaving base).
+  srcrect = { .x = (5 * 48), .y = 48, .w = 24, .h = 24 };
+  if (ghost == blinky_) {
+    srcrect.x += (0 * 24);
+  } else if (ghost == inky_) {
+    srcrect.x += (1 * 24);
+  } else if (ghost == pinky_) {
+    srcrect.y += (1 * 24);
+  } else {
+    srcrect.x += (1 * 24);
+    srcrect.y += (1 * 24);
+  }
+  drawSprite(&srcrect, ghost->getTargetTileX() * TILE_SIZE, ghost->getTargetTileY() * TILE_SIZE);
+  
+  // Drawing ghost eyes.
   srcrect = { .x = 0, .y = 0, .w = 48, .h = 48 };
   if (ghost->getDirection() == DIRECTION_UP) {
     srcrect.x += (1 * 48);
@@ -1069,7 +1126,8 @@ void Game::drawGhost(Actor *ghost) {
 
 void Game::drawGate(int x, int y)
 {
-  // TODO: draw gate tile.
+  SDL_Rect srcrect = { .x = (5 * 48), .y = 24, .w = 24, .h = 24 };
+  drawSprite(&srcrect, x, y);
 }
 
 void Game::drawWall(int x, int y)
