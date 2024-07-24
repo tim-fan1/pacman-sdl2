@@ -407,7 +407,7 @@ bool Game::movePacmanForwardWithCollision()
               gameOver(true);
             }
           } else if (tile == TILE_POWER_PELLET) {
-            pacman_->setPower(1000000);
+            pacman_->setPower(1000);
             board_[pacmanX + i][pacmanY + j] = TILE_NONE;
             Actor *ghosts[4] = { blinky_, inky_, pinky_, clyde_ };
             for (int i = 0; i < 4; i++) {
@@ -1080,7 +1080,13 @@ void Game::drawPacman() {
 void Game::drawGhost(Actor *ghost) {
   // Drawing ghost sprite.
   SDL_Rect srcrect = { .x = 0, .y = 48, .w = 48, .h = 48 };
-  if (!ghost->getIsEaten()) {
+  if (ghost->getIsFrightened()) {
+    // Draw frightened ghost sprite.
+    srcrect.x = 0;
+    srcrect.y = 0;
+    drawSprite(&srcrect, ghost->getX() - (TILE_SIZE / 2), ghost->getY() - (TILE_SIZE / 2));
+  } else if (!ghost->getIsEaten()) {
+    // Draw normal ghost sprite.
     if (ghost == blinky_) {
       srcrect.x += (0 * 48);
     } else if (ghost == inky_) {
@@ -1091,6 +1097,8 @@ void Game::drawGhost(Actor *ghost) {
       srcrect.x += (3 * 48);
     }
     drawSprite(&srcrect, ghost->getX() - (TILE_SIZE / 2), ghost->getY() - (TILE_SIZE / 2));
+  } else {
+    // Draw nothing.
   }
   
   // Drawing target tile on screen for debugging.
@@ -1109,17 +1117,19 @@ void Game::drawGhost(Actor *ghost) {
   drawSprite(&srcrect, ghost->getTargetTileX() * TILE_SIZE, ghost->getTargetTileY() * TILE_SIZE);
   
   // Drawing ghost eyes.
-  srcrect = { .x = 0, .y = 0, .w = 48, .h = 48 };
-  if (ghost->getDirection() == DIRECTION_UP) {
-    srcrect.x += (1 * 48);
-  } else if (ghost->getDirection() == DIRECTION_LEFT) {
-    srcrect.x += (3 * 48);
-  } else if (ghost->getDirection() == DIRECTION_RIGHT) {
-    srcrect.x += (4 * 48);
-  } else {
-    srcrect.x += (2 * 48);
+  if (!ghost->getIsFrightened()) {
+    srcrect = { .x = 0, .y = 0, .w = 48, .h = 48 };
+    if (ghost->getDirection() == DIRECTION_UP) {
+      srcrect.x += (1 * 48);
+    } else if (ghost->getDirection() == DIRECTION_LEFT) {
+      srcrect.x += (3 * 48);
+    } else if (ghost->getDirection() == DIRECTION_RIGHT) {
+      srcrect.x += (4 * 48);
+    } else {
+      srcrect.x += (2 * 48);
+    }
+    drawSprite(&srcrect, ghost->getX() - (TILE_SIZE / 2), ghost->getY() - (TILE_SIZE / 2));
   }
-  drawSprite(&srcrect, ghost->getX() - (TILE_SIZE / 2), ghost->getY() - (TILE_SIZE / 2));
 }
 
 /* Taking from the 24px spritesheet. */
