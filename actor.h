@@ -4,6 +4,7 @@
 #include "direction.h"
 
 typedef enum {
+  GHOST_NONE,
   GHOST_CHASE,
   GHOST_SCATTER,
   GHOST_EATEN,
@@ -55,7 +56,14 @@ class Actor {
     int getSpotInBaseX();
     int getSpotInBaseY();
     
+    void setTargetTileX(int targetTileX);
+    void setTargetTileY(int targetTileY);
+    int getTargetTileX();
+    int getTargetTileY();
+    
     // The four main states.
+    void printState();
+    
     bool getIsChase();
     void setIsChase();
     
@@ -112,6 +120,9 @@ class Actor {
     // Where should this ghost go inside the home base when return to base.
     int inBaseTileX_;
     int inBaseTileY_;
+    
+    int targetTileX_;
+    int targetTileY_;
     
     /* For PACMAN. */
     
