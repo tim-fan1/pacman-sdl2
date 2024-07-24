@@ -2,11 +2,11 @@
 #include <cassert>
 #include <cstdio>
 
-Actor::Actor(int tileX, int tileY, int tileSize, int waitingFrames,
+Actor::Actor(int tileX, int tileY, int tileSize, int waitingPellets,
              int inBaseTileX, int inBaseTileY, int speed)
 {
   tileSize_ = tileSize;
-  waitingFrames_ = waitingFrames;
+  waitingPellets_ = waitingPellets;
   speed_ = speed;
   
   // Place actor at tile (x, y).
@@ -89,14 +89,14 @@ void Actor::setDirection(Direction direction)
   direction_ = direction;
 }
 
-int Actor::getWaitingFrames()
+int Actor::getWaitingPellets()
 {
-  return waitingFrames_;
+  return waitingPellets_;
 }
 
-void Actor::setWaitingFrames(int waitingFrames)
+void Actor::setWaitingPellets(int waitingPellets)
 {
-  waitingFrames_ = waitingFrames;
+  waitingPellets_ = waitingPellets;
 }
 
 void Actor::setSpeed(int speed)

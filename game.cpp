@@ -191,7 +191,7 @@ bool Game::run(Level *level)
         case 'i': // Inky. At start stands inside base.
           board_[x][y] = TILE_BASE;
           if (inky_ == NULL) {
-            inky_ = new Actor(x, y, TILE_SIZE, 500, x, y);
+            inky_ = new Actor(x, y, TILE_SIZE, 30, x, y);
           }
           break;
         case 'p': // Pinky. At start stands inside base.
@@ -203,7 +203,7 @@ bool Game::run(Level *level)
         case 'c': // Clyde. At start stands inside base.
           board_[x][y] = TILE_BASE;
           if (clyde_ == NULL) {
-            clyde_ = new Actor(x, y, TILE_SIZE, 1000, x, y);
+            clyde_ = new Actor(x, y, TILE_SIZE, 90, x, y);
           }
           break;
         default:
@@ -401,6 +401,13 @@ bool Game::movePacmanForwardWithCollision()
         if (isCollidingWithTile(pacman_, tileX, tileY)) {
           if (tile == TILE_PELLET) {
             pellets_ += 1;
+            Actor *ghosts[4] = { blinky_, inky_, pinky_, clyde_ };
+            for (int i = 0; i < 4; i++) {
+              Actor *ghost = ghosts[i];
+              if (ghost->getWaitingPellets() > 0) {
+                ghost->setWaitingPellets(ghost->getWaitingPellets() - 1);
+              }
+            }
             board_[pacmanX + i][pacmanY + j] = TILE_NONE;
             if (pellets_ == totalPellets_) {
               // PACMAN has collected all pellets.
@@ -576,15 +583,16 @@ void Game::moveGhost(Actor *ghost, int targetTileX, int targetTileY)
   int ghostTileY = (ghost->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
 
   // At the start of game, waiting until can start to leave home.
-  if (ghost->getWaitingFrames() > 0) {
-    ghost->setWaitingFrames(ghost->getWaitingFrames() - 1);
-    // TODO: Move up and down within base, while waiting to leave home.
-    return;
-  } else if (ghost->getWaitingFrames() == 0) {
+  if (ghost->getWaitingPellets() == 0) {
     // Start to leave home!
     ghost->setIsFindingExit();
-    ghost->setWaitingFrames(-1);
+    ghost->setWaitingPellets(-1);
+  } else if (ghost->getWaitingPellets() > 0){
+    // TODO: Continue to move up and down within base, while waiting to leave home.
+    return;
   }
+  
+  assert(ghost->getWaitingPellets() == -1);
   
   if (ghost->getIsFindingExit()) {
     // Ghost is looking for exit.
