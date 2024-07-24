@@ -132,6 +132,12 @@ class Game {
                            // false is Scatter mode,
                            // true is Chase mode.
     
+    // For animations.
+    int pacmanAnimationFrame_;
+    int pacmanAnimationFrameCounter_;
+    int pelletAnimationFrame_;
+    int pelletAnimationFrameCounter_;
+    
     // How long each frame should take in ms.
     static const Uint32 FRAME_TIME = 16.7;
     static const Uint32 TILE_SIZE = 24;
