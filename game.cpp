@@ -282,6 +282,22 @@ bool Game::run(Level *level)
       // Remember the direction, will use in future frames
       // if user doesn't input a direction on those frames.
       turnBuffer = direction;
+      pacmanAnimationFrame_ = 0;
+    } else if (pacman_->getDirection() != DIRECTION_NONE) {
+      // Update PACMAN's animation frame every five frames.
+      pacmanAnimationFrameCounter_++;
+      if (pacmanAnimationFrameCounter_ % 5 == 0) {
+        pacmanAnimationFrameCounter_ = 0;
+        // Update PACMAN's animation frame.
+        pacmanAnimationFrame_ = (pacmanAnimationFrame_ == 0) ? 1 : 0;
+      }
+    }
+    
+    pelletAnimationFrameCounter_++;
+    if (pelletAnimationFrameCounter_ % 10 == 0) {
+      pelletAnimationFrameCounter_ = 0;
+      // Update pellet's animation frame.
+      pelletAnimationFrame_ = (pelletAnimationFrame_ == 0) ? 1 : 0;
     }
     
     // Render the current state of our simulation to screen.
@@ -414,7 +430,9 @@ bool Game::movePacmanForwardWithCollision()
               gameOver(true);
             }
           } else if (tile == TILE_POWER_PELLET) {
-            pacman_->setPower(1000);
+            // Power pellet last 6 seconds, 6000 milliseconds.
+            // TODO: use timer to measure 6 seconds instead of frames.
+            pacman_->setPower(6000 / FRAME_TIME);
             board_[pacmanX + i][pacmanY + j] = TILE_NONE;
             Actor *ghosts[4] = { blinky_, inky_, pinky_, clyde_ };
             for (int i = 0; i < 4; i++) {
@@ -665,7 +683,7 @@ void Game::moveGhost(Actor *ghost, int targetTileX, int targetTileY)
           directions.push_back(newDirection);
         }
       }
-      // FIXME: The way I've designed directions and intersections is bad.
+      // FIXME: Using a while (1) loop here probably won't break...
       assert(directions.size() != 0);
       while (1) {
         Direction randomDirection = directions.at(rand() % directions.size());
@@ -1072,6 +1090,11 @@ void Game::render()
 
 void Game::drawPacman() {
   SDL_Rect srcrect = { .x = (4 * 48), .y = 48, .w = 48, .h = 48 };
+  if (pacmanAnimationFrame_ == 0) {
+    srcrect.x += (0 * 48);
+  } else if (pacmanAnimationFrame_ == 1) {
+    srcrect.x += (1 * 48);
+  }
   double angle = 0;
   if (pacman_->getDirection() == DIRECTION_UP) {
     angle = 270;
@@ -1111,7 +1134,7 @@ void Game::drawGhost(Actor *ghost) {
   
   // Drawing target tile on screen for debugging.
   // FIXME: Remove me! Is buggy (target tile is wrong when ghost first leaving base).
-  srcrect = { .x = (5 * 48), .y = 48, .w = 24, .h = 24 };
+  srcrect = { .x = 0, .y = (2 * 48), .w = 24, .h = 24 };
   if (ghost == blinky_) {
     srcrect.x += (0 * 24);
   } else if (ghost == inky_) {
@@ -1246,6 +1269,11 @@ void Game::drawPellet(int x, int y)
 void Game::drawPowerPellet(int x, int y)
 {
   SDL_Rect srcrect = { .x = (5 * 48) + (24), .y = 0, .w = 24, .h = 24 };
+  if (pelletAnimationFrame_ == 0) {
+    srcrect.y += (0 * 24);
+  } else if (pelletAnimationFrame_ == 1) {
+    srcrect.y += (1 * 24);
+  }
   drawSprite(&srcrect, x, y);
 }
 
