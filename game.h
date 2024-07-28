@@ -89,6 +89,7 @@ class Game {
     
     void drawGate(int x, int y);
     void drawWall(int x, int y);
+    bool isWall(TileType tile);
     void drawPowerPellet(int x, int y);
     void drawPellet(int x, int y);
     
