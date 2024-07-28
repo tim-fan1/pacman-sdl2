@@ -431,7 +431,7 @@ bool Game::movePacmanForwardWithCollision()
             }
           } else if (tile == TILE_POWER_PELLET) {
             // Power pellet last 6 seconds, 6000 milliseconds.
-            // TODO: use timer to measure 6 seconds instead of frames.
+            // TODO: Flash frightened ghosts 5 times in the last second.
             pacman_->setPower(6000 / FRAME_TIME);
             board_[pacmanX + i][pacmanY + j] = TILE_NONE;
             Actor *ghosts[4] = { blinky_, inky_, pinky_, clyde_ };
@@ -1173,91 +1173,135 @@ void Game::drawGate(int x, int y)
 
 void Game::drawWall(int x, int y)
 {
-  SDL_Rect srcrect = { .x = (8 * 48), .y = 0, .w = 24, .h = 24 };
-  // TODO: do a better properly working drawing wall algorithm.
+  SDL_Rect srcrect = { .x = (6 * 48), .y = 0, .w = 24, .h = 24 };
   int tileX = x / TILE_SIZE; int tileY = y / TILE_SIZE;
   
-  // Get the indices of the adjacent tiles.
-  int upTileX = tileX; int upTileY = tileY - 1;
-  int downTileX = tileX; int downTileY = tileY + 1;
+  // Get the indices of all surrounding tiles.
+  
+  // The Top and Left tiles.
+  int topTileX = tileX; int topTileY = tileY - 1;
   int leftTileX = tileX - 1; int leftTileY = tileY;
+  
+  // The Top-Left tile.
+  int topLeftTileX = leftTileX; int topLeftTileY = topTileY;
+  
+  // The Bot and Right tiles.
+  int botTileX = tileX; int botTileY = tileY + 1;
   int rightTileX = tileX + 1; int rightTileY = tileY;
   
+  // The Bot-Right tile.
+  int botRightTileX = rightTileX; int botRightTileY = botTileY;
+  
+  // Remaining surrounding tiles.
+  int botLeftTileX = leftTileX; int botLeftTileY = botTileY;
+  int topRightTileX = rightTileX; int topRightTileY = topTileY;
+  
   // Make sure none are out of bounds.
-  assert(board_[0][0] == TILE_NONE);
-  if (upTileY < 0) {
-    upTileX = 0;
-    upTileY = 0;
-  }
-  if (downTileY > boardHeight_ - 1) {
-    downTileX = 0;
-    downTileY = 0;
-  }
-  if (leftTileX < 0) {
-    leftTileX = 0;
-    leftTileY = 0;
-  }
-  if (rightTileX > boardWidth_ - 1) {
-    rightTileX = 0;
-    rightTileY = 0;
+  assert(board_[0][3] == TILE_WALL);
+  
+  int *arrayX[8] = { &topTileX, &leftTileX, &botTileX, &rightTileX, &topLeftTileX, &botLeftTileX, &topRightTileX, &botRightTileX };
+  int *arrayY[8] = { &topTileY, &leftTileY, &botTileY, &rightTileY, &topLeftTileY, &botLeftTileY, &topRightTileY, &botRightTileY };
+
+  for (int i = 0; i < 8; i++) {
+    int aX = *arrayX[i];
+    int aY = *arrayY[i];
+    if ((aX < 0) || (aX > boardWidth_ - 1)) {
+      (*arrayX[i]) = 0;
+    }
+    if ((aY < 0) || (aY > boardHeight_ - 1)) {
+      (*arrayY[i]) = 3;
+    }
   }
 
-  // Get the type of each adjacent tile.
-  TileType upTile = board_[upTileX][upTileY];
-  TileType downTile = board_[downTileX][downTileY];
+  // Get the type of each surrounding tile.
+  TileType topTile = board_[topTileX][topTileY];
+  TileType botTile = board_[botTileX][botTileY];
   TileType leftTile = board_[leftTileX][leftTileY];
   TileType rightTile = board_[rightTileX][rightTileY];
   
-  if (leftTile == TILE_WALL && rightTile == TILE_WALL) {
-    // Drawing walls.
-    srcrect.x += 48;
-    if (upTile != TILE_WALL) {
-      // Draw bottom wall.
-      srcrect.x += 24;
-      srcrect.y += 24;
-    } else if (downTile != TILE_WALL) {
-      // Draw top wall.
-      srcrect.x += 0;
-      srcrect.y += 0;
+  TileType topLeftTile = board_[topLeftTileX][topLeftTileY];
+  TileType botLeftTile = board_[botLeftTileX][botLeftTileY];
+  TileType topRightTile = board_[topRightTileX][topRightTileY];
+  TileType botRightTile = board_[botRightTileX][botRightTileY];
+  
+  bool success = false;
+  
+  /* See if this wall should be drawn as one of the corner tiles. */
+  
+  if (isWall(botTile)) {
+    // Checking for Top-Left corner wall and Top-Right corner wall.
+    if (isWall(rightTile)) {
+      // Is a Top-Left corner wall candidate. Check if it should be.
+      if (!isWall(botRightTile)) {
+        // Is a Top-Left corner wall!
+        success = true;
+        srcrect = { .x = (6 * 48), .y = 0, .w = 24, .h = 24 };
+      } else if (!isWall(topLeftTile) && !isWall(topTile) && !isWall(leftTile)) {
+        // Is a Top-Left corner wall!
+        success = true;
+        srcrect = { .x = (6 * 48), .y = 0, .w = 24, .h = 24 };
+      }
     }
-  } else if (upTile == TILE_WALL && downTile == TILE_WALL) {
-    // Drawing walls.
-    srcrect.x += 48;
-    if (leftTile != TILE_WALL) {
-      // Draw right wall.
-      srcrect.x += 24;
-      srcrect.y += 0;
-    } else if (rightTile != TILE_WALL) {
-      // Draw left wall.
-      srcrect.x += 0;
-      srcrect.y += 24;
-    }
-  } else if (downTile == TILE_WALL) {
-    // Drawing corners.
-    srcrect.x += 0;
-    if (rightTile == TILE_WALL) {
-      // Drawing top-left corner.
-      srcrect.x += 0;
-      srcrect.y += 0;
-    } else if (leftTile == TILE_WALL) {
-      // Drawing top-right corner.
-      srcrect.x += 24;
-      srcrect.y += 0;
-    }
-  } else if (upTile == TILE_WALL) {
-    // Drawing corners.
-    srcrect.x += 0;
-    if (rightTile == TILE_WALL) {
-      // Drawing bottom-left corner.
-      srcrect.x += 0;
-      srcrect.y += 24;
-    } else if (leftTile == TILE_WALL) {
-      // Drawing bottom-right corner.
-      srcrect.x += 24;
-      srcrect.y += 24;
+    if (!success && isWall(leftTile)) {
+      // Is a Top-Right corner wall candidate. Check if it should be.
+      if (!isWall(botLeftTile)) {
+        // Is a Top-Right corner wall!
+        success = true;
+        srcrect = { .x = (6 * 48) + 24, .y = 0, .w = 24, .h = 24 };
+      } else if (!isWall(topRightTile) && !isWall(topTile) && !isWall(rightTile)) {
+        // Is a Top-Right corner wall!
+        success = true;
+        srcrect = { .x = (6 * 48) + 24, .y = 0, .w = 24, .h = 24 };
+      }
     }
   }
+  
+  if (!success && isWall(topTile)) {
+    // Checking for Bot-Left corner wall and Bot-Right corner wall.
+    if (isWall(rightTile)) {
+      // Is a Bot-Left corner wall candidate. Check if it should be.
+      if (!isWall(topRightTile)) {
+        // Is a Bot-Left corner wall!
+        success = true;
+        srcrect = { .x = (6 * 48), .y = 24, .w = 24, .h = 24 };
+      } else if (!isWall(botLeftTile) && !isWall(botTile) && !isWall(leftTile)) {
+        // Is a Bot-Left corner wall!
+        success = true;
+        srcrect = { .x = (6 * 48), .y = 24, .w = 24, .h = 24 };
+      }
+    }
+    if (!success && isWall(leftTile)) {
+      // Is a Bot-Right corner wall candidate. Check if it should be.
+      if (!isWall(topLeftTile)) {
+        // Is a Bot-Right corner wall!
+        success = true;
+        srcrect = { .x = (6 * 48) + 24, .y = 24, .w = 24, .h = 24 };
+      } else if (!isWall(botRightTile) && !isWall(botTile) && !isWall(rightTile)) {
+        // Is a Bot-Right corner wall!
+        success = true;
+        srcrect = { .x = (6 * 48) + 24, .y = 24, .w = 24, .h = 24 };
+      }
+    }
+  }
+  
+  /* See if this wall should be drawn as one of the edge tiles. */
+  
+  if (!success) {
+    if (!isWall(leftTile) || !isWall(rightTile)) {
+      // Draw Left/Right edge wall tile.
+      srcrect = { .x = (7 * 48), .y = 24, .w = 24, .h = 24 };
+    } else {
+      // Draw Top/Bot edge wall tile.
+      srcrect = { .x = (7 * 48), .y = 0, .w = 24, .h = 24 };
+    }
+  }
+  
   drawSprite(&srcrect, x, y);
+}
+
+bool Game::isWall(TileType tile)
+{
+  return (tile == TILE_WALL || tile == TILE_GATE);
 }
 
 void Game::drawPellet(int x, int y)
