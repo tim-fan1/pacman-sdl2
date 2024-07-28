@@ -178,32 +178,32 @@ bool Game::run(Level *level)
         case '0': // PACMAN. At start stands below the base.
           board_[x][y] = TILE_NONE;
           if (pacman_ == NULL) {
-            pacman_ = new Actor(x, y, TILE_SIZE);
+            pacman_ = new Actor(x, y, TILE_SIZE, DIRECTION_NONE);
           }
           break;
         case 'b': // Blinky. At start stands on a tile outside base,
                   // The tile that all ghosts target to reach home.
           board_[x][y] = TILE_NONE;
           if (blinky_ == NULL) {
-            blinky_ = new Actor(x, y, TILE_SIZE, 0, x, y + 3);
+            blinky_ = new Actor(x, y, TILE_SIZE, DIRECTION_LEFT, 0, x, y + 3);
           }
           break;
         case 'i': // Inky. At start stands inside base.
           board_[x][y] = TILE_BASE;
           if (inky_ == NULL) {
-            inky_ = new Actor(x, y, TILE_SIZE, 30, x, y);
+            inky_ = new Actor(x, y, TILE_SIZE, DIRECTION_UP, 30, x, y);
           }
           break;
         case 'p': // Pinky. At start stands inside base.
           board_[x][y] = TILE_BASE;
           if (pinky_ == NULL) {
-            pinky_ = new Actor(x, y, TILE_SIZE, 0, x, y);
+            pinky_ = new Actor(x, y, TILE_SIZE, DIRECTION_DOWN, 10, x, y);
           }
           break;
         case 'c': // Clyde. At start stands inside base.
           board_[x][y] = TILE_BASE;
           if (clyde_ == NULL) {
-            clyde_ = new Actor(x, y, TILE_SIZE, 90, x, y);
+            clyde_ = new Actor(x, y, TILE_SIZE, DIRECTION_UP, 90, x, y);
           }
           break;
         default:
@@ -606,7 +606,12 @@ void Game::moveGhost(Actor *ghost, int targetTileX, int targetTileY)
     ghost->setIsFindingExit();
     ghost->setWaitingPellets(-1);
   } else if (ghost->getWaitingPellets() > 0){
-    // TODO: Continue to move up and down within base, while waiting to leave home.
+    // Continue going forward and back, bouncing
+    // against walls while waiting to leave base.
+    if (!moveGhostForwardWithCollision(ghost)) {
+      ghost->turnAround();
+      moveGhostForwardWithCollision(ghost);
+    }
     return;
   }
   
@@ -1040,7 +1045,6 @@ void Game::render()
         case TILE_NONE:
           break;
         case TILE_WALL:
-          // TODO: Fix wall drawing algorithm.
           drawWall(i * TILE_SIZE, j * TILE_SIZE);
           break;
         case TILE_POWER_PELLET:
@@ -1102,8 +1106,10 @@ void Game::drawPacman() {
     angle = 90;
   } else if (pacman_->getDirection() == DIRECTION_LEFT) {
     angle = 180;
-  } else {
+  } else if (pacman_->getDirection() == DIRECTION_RIGHT) {
     angle = 0;
+  } else {
+    srcrect.x = (5 * 48);
   }
   drawSprite(&srcrect, pacman_->getX() - (TILE_SIZE / 2), pacman_->getY() - (TILE_SIZE / 2), angle);
 }
