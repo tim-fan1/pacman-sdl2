@@ -26,7 +26,7 @@ class Actor {
      * hitbox!!! -- the sprite drawn on the screen will end up filling
      * up both tiles (tileX, tileY) and (tileX + 1, tileY) completely.
      */
-    Actor(int tileX, int tileY, int tileSize, int waitingFrames = 0,
+    Actor(int tileX, int tileY, int tileSize, Direction initialDirection, int waitingFrames = 0,
           int inBaseTileX = 0, int inBaseTileY = 0, int speed = 3);
     ~Actor();
     

@@ -2,12 +2,13 @@
 #include <cassert>
 #include <cstdio>
 
-Actor::Actor(int tileX, int tileY, int tileSize, int waitingPellets,
+Actor::Actor(int tileX, int tileY, int tileSize, Direction initialDirection, int waitingPellets,
              int inBaseTileX, int inBaseTileY, int speed)
 {
   tileSize_ = tileSize;
   waitingPellets_ = waitingPellets;
   speed_ = speed;
+  direction_ = initialDirection;
   
   // Place actor at tile (x, y).
   x_ = tileX * tileSize + (tileSize / 2);
