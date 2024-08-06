@@ -138,6 +138,7 @@ class Game {
     int pacmanAnimationFrameCounter_;
     int pelletAnimationFrame_;
     int pelletAnimationFrameCounter_;
+    SDL_Rect frightenedGhostSprite_;
     
     // How long each frame should take in ms.
     static const Uint32 FRAME_TIME = 16.7;

@@ -29,6 +29,7 @@ Game::Game()
   modes_ = NULL;
   currentModeIndex_ = 0;
   currentMode_ = false;
+  frightenedGhostSprite_ = { .x = 0, .y = 0, .w = 48, .h = 48 };
 
   bool success = true;
   
@@ -431,7 +432,6 @@ bool Game::movePacmanForwardWithCollision()
             }
           } else if (tile == TILE_POWER_PELLET) {
             // Power pellet last 6 seconds, 6000 milliseconds.
-            // TODO: Flash frightened ghosts 5 times in the last second.
             pacman_->setPower(6000 / FRAME_TIME);
             board_[pacmanX + i][pacmanY + j] = TILE_NONE;
             Actor *ghosts[4] = { blinky_, inky_, pinky_, clyde_ };
@@ -1015,6 +1015,20 @@ bool Game::update(Direction newDirection)
   if (pacman_->getPower() > 0) {
     // If PACMAN has power left, reduce by one frame.
     pacman_->setPower(pacman_->getPower() - 1);
+    // TODO: Flash frightened ghosts 5 times in the last second.
+    if (pacman_->getPower() == (1500 / FRAME_TIME)) {
+      frightenedGhostSprite_ = { .x = 48, .y = 2 * 48, .w = 48, .h = 48 };
+    } else if (pacman_->getPower() == (1250 / FRAME_TIME)) {
+      frightenedGhostSprite_ = { .x = 0, .y = 0, .w = 48, .h = 48 };
+    } else if (pacman_->getPower() == (1000 / FRAME_TIME)) {
+      frightenedGhostSprite_ = { .x = 48, .y = 2 * 48, .w = 48, .h = 48 };
+    } else if (pacman_->getPower() == (750 / FRAME_TIME)) {
+      frightenedGhostSprite_ = { .x = 0, .y = 0, .w = 48, .h = 48 };
+    } else if (pacman_->getPower() == (500 / FRAME_TIME)) {
+      frightenedGhostSprite_ = { .x = 48, .y = 2 * 48, .w = 48, .h = 48 };
+    } else if (pacman_->getPower() == (250 / FRAME_TIME)) {
+      frightenedGhostSprite_ = { .x = 0, .y = 0, .w = 48, .h = 48 };
+    }
   }
   if (pacman_->getPower() == 0) {
     pacman_->setPower(-1);
@@ -1119,8 +1133,7 @@ void Game::drawGhost(Actor *ghost) {
   SDL_Rect srcrect = { .x = 0, .y = 48, .w = 48, .h = 48 };
   if (ghost->getIsFrightened()) {
     // Draw frightened ghost sprite.
-    srcrect.x = 0;
-    srcrect.y = 0;
+    srcrect = frightenedGhostSprite_;
     drawSprite(&srcrect, ghost->getX() - (TILE_SIZE / 2), ghost->getY() - (TILE_SIZE / 2));
   } else if (!ghost->getIsEaten()) {
     // Draw normal ghost sprite.
