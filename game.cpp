@@ -663,6 +663,8 @@ void Game::moveGhost(Actor *ghost, int targetTileX, int targetTileY)
     if (ghost->getX() == ghostTileX * TILE_SIZE &&
         ghost->getY() == ghostTileY * TILE_SIZE) {
       // We are exactly on a tile. Make sure we are at an intersection.
+      // If are at an intersection, then randomly choose a direction to turn,
+      // either left, right, or continue forward.
       Direction oldDirection = ghost->getDirection();
       Direction newDirection = DIRECTION_NONE;
       int dx[4] = { 0, 0, -1, 1 };
@@ -688,14 +690,22 @@ void Game::moveGhost(Actor *ghost, int targetTileX, int targetTileY)
           directions.push_back(newDirection);
         }
       }
-      // FIXME: Using a while (1) loop here probably won't break...
-      assert(directions.size() != 0);
-      while (1) {
-        Direction randomDirection = directions.at(rand() % directions.size());
+      while (directions.size() != 0) {
+        int randomIndex = rand() % directions.size();
+        Direction randomDirection = directions.at(randomIndex);
         ghost->setDirection(randomDirection);
-        if (moveGhostForwardWithCollision(ghost)) break;
+        if (moveGhostForwardWithCollision(ghost)) {
+          // Successfully moved forward, so current direction is a valid direction.
+          break;
+        } else {
+          // Current direction leads to a wall, is not a valid direction.
+          // Remove from list so that on next iteration of loop
+          // this direction is not considered as a valid direction.
+          directions.erase(directions.begin() + randomIndex);
+        }
       }
     } else {
+      // Not at an intersection. Keep moving forward until are at an intersection.
       moveGhostForwardWithCollision(ghost);
     }
   } else {
@@ -1015,7 +1025,7 @@ bool Game::update(Direction newDirection)
   if (pacman_->getPower() > 0) {
     // If PACMAN has power left, reduce by one frame.
     pacman_->setPower(pacman_->getPower() - 1);
-    // TODO: Flash frightened ghosts 5 times in the last second.
+    // Flash frightened ghosts 3 times in the last 1.5 seconds.
     if (pacman_->getPower() == (1500 / FRAME_TIME)) {
       frightenedGhostSprite_ = { .x = 48, .y = 2 * 48, .w = 48, .h = 48 };
     } else if (pacman_->getPower() == (1250 / FRAME_TIME)) {
