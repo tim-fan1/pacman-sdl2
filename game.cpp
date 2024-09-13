@@ -118,10 +118,10 @@ bool Game::run(Level *level)
     printf("Failed to allocate memory for list of mode switching times!\n");
     return false;
   }
-  modes_[0] = 7; modes_[1] = 20; // Wave 1.
-  modes_[2] = 7; modes_[3] = 20; // Wave 2.
-  modes_[4] = 5; modes_[5] = 20; // Wave 3.
-  modes_[6] = 5; modes_[7] = -1; // Endless Wave.
+  modes_[0] = 7; modes_[1] = 20; // Wave 1. 7 seconds scatter, 20 seconds chase.
+  modes_[2] = 7; modes_[3] = 20; // Wave 2. 7 seconds scatter, 20 seconds chase.
+  modes_[4] = 5; modes_[5] = 20; // Wave 3. 5 seconds scatter, 20 seconds chase.
+  modes_[6] = 5; modes_[7] = -1; // Endless Wave. 7 seconds scatter, endless chase.
   
   // Initialise timer used to track when to mode switch.
   timer_ = new Timer();
@@ -284,7 +284,9 @@ bool Game::run(Level *level)
       // if user doesn't input a direction on those frames.
       turnBuffer = direction;
       pacmanAnimationFrame_ = 0;
-    } else if (pacman_->getDirection() != DIRECTION_NONE) {
+    }
+    
+    if (pacman_->getDirection() != DIRECTION_NONE) {
       // Update PACMAN's animation frame every five frames.
       pacmanAnimationFrameCounter_++;
       if (pacmanAnimationFrameCounter_ % 5 == 0) {
