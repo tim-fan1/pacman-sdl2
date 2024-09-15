@@ -361,15 +361,17 @@ void Game::gameOver(bool isWin)
 {
   isGameOver_ = true;
   isGameOverWin_ = isWin;
+  
+  // TODO: Set up game state so that we can reset and restart the level.
 }
 
 bool Game::isCollidingWithActor(Actor *actorA, Actor *actorB)
 {
 //  if (actorA == pacman_ || actorB == pacman_) return false;
-  int aTileX = (actorA->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
-  int aTileY = (actorA->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
-  int bTileX = (actorB->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
-  int bTileY = (actorB->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
+  int aTileX = actorA->getTileX();
+  int aTileY = actorA->getTileY();
+  int bTileX = actorB->getTileX();
+  int bTileY = actorB->getTileY();
   
   return (aTileX == bTileX && aTileY == bTileY);
 }
@@ -406,13 +408,13 @@ bool Game::isCollidingWithTile(Actor *actor, int tileX, int tileY)
 bool Game::movePacmanForwardWithCollision()
 {
   bool success = true;
-  
+  // TODO: Use, WHERE IS PACMAN WITHIN THE TILE IT IS IN?, to detect if collision.
   // First try move PACMAN forward without worrying about collision.
   pacman_->moveForward();
   
   // Which tile is the center of PACMAN now on?
-  int pacmanX = (pacman_->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
-  int pacmanY = (pacman_->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
+  int pacmanX = pacman_->getTileX();
+  int pacmanY = pacman_->getTileY();
   TileType tile;
 
   // Get all the tiles surrounding that tile.
@@ -533,8 +535,8 @@ bool Game::moveGhostForwardWithCollision(Actor *ghost)
   ghost->moveForward();
   
   // Which tile is the center of this ghost now on?
-  int ghostX = (ghost->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
-  int ghostY = (ghost->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
+  int ghostX = ghost->getTileX();
+  int ghostY = ghost->getTileY();
   TileType tile;
 
   // Get all the tiles surrounding that tile.
@@ -596,8 +598,8 @@ bool Game::moveGhostForwardWithCollision(Actor *ghost)
     }
     
     // If this ghost is in a portal, check if they are exactly in the portal.
-    int ghostTileX = (ghost->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
-    int ghostTileY = (ghost->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
+    int ghostTileX = ghost->getTileX();
+    int ghostTileY = ghost->getTileY();
     if (board_[ghostTileX][ghostTileY] == TILE_PORTAL) {
       if (ghostTileX * TILE_SIZE == ghost->getX() &&
           ghostTileY * TILE_SIZE == ghost->getY()) {
@@ -631,8 +633,8 @@ void Game::moveGhost(Actor *ghost, int targetTileX, int targetTileY)
 {
   ghost->setTargetTileX(targetTileX);
   ghost->setTargetTileY(targetTileY);
-  int ghostTileX = (ghost->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
-  int ghostTileY = (ghost->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
+  int ghostTileX = ghost->getTileX();
+  int ghostTileY = ghost->getTileY();
 
   // At the start of game, waiting until can start to leave home.
   if (ghost->getWaitingPellets() == 0) {
@@ -876,8 +878,8 @@ bool Game::update(Direction newDirection)
         timer_->start();
       }
     }
-    int pacmanTileX = (pacman_->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
-    int pacmanTileY = (pacman_->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
+    int pacmanTileX = pacman_->getTileX();
+    int pacmanTileY = pacman_->getTileY();
     int targetTileX = pacmanTileX;
     int targetTileY = pacmanTileY;
     

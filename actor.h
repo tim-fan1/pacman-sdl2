@@ -38,6 +38,15 @@ class Actor {
     int getStartTileX();
     int getStartTileY();
     
+    int getCenterX();
+    int getCenterY();
+    
+    int getTileOffsetX();
+    int getTileOffsetY();
+    
+    int getTileX();
+    int getTileY();
+    
     void setTileX(int tileX);
     void setTileY(int tileY);
     

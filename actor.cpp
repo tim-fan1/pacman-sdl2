@@ -50,6 +50,36 @@ int Actor::getStartTileY()
   return startTileY_;
 }
 
+int Actor::getCenterX()
+{
+  return getX() + (tileSize_ / 2);
+}
+
+int Actor::getCenterY()
+{
+  return getY() + (tileSize_ / 2);
+}
+
+int Actor::getTileX()
+{
+  return getCenterX() / tileSize_;
+}
+
+int Actor::getTileY()
+{
+  return getCenterY() / tileSize_;
+}
+
+int Actor::getTileOffsetX()
+{
+  return getCenterX() % tileSize_;
+}
+
+int Actor::getTileOffsetY()
+{
+  return getCenterY() % tileSize_;
+}
+
 void Actor::setTileX(int tileX)
 {
   x_ = tileX * tileSize_;
