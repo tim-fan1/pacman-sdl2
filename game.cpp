@@ -6,6 +6,7 @@
 #include <utility>
 #include <cstdlib>
 #include <ctime>
+#include "level.h"
 
 Game::Game()
 {
@@ -31,10 +32,13 @@ Game::Game()
   currentMode_ = false;
   frightenedGhostSprite_ = { .x = 0, .y = 0, .w = 48, .h = 48 };
 
+  success_ = false;
+  
   bool success = true;
   
-  // Init SDL.
-  if (success && SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
+  /* Initialising SDL. */
+  
+  if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
     printf("SDL video initialisation failed! SDL Error %s\n", SDL_GetError());
     success = false;
   }
@@ -83,67 +87,56 @@ Game::Game()
     }
   }
   
-  // Free resources.
+  // Free temp resource.
   SDL_FreeSurface(tempSurface);
   
-  // Set to let caller know whether initialisation succeeded.
-  success_ = success;
-}
-
-Game::~Game()
-{
-  if (window_ != NULL) SDL_DestroyWindow(window_);
-  SDL_Quit();
-  if (spritesheet_ != NULL) SDL_DestroyTexture(spritesheet_);
-  if (board_ != NULL) free(board_);
-  if (pacman_ != NULL) delete pacman_;
-  if (blinky_ != NULL) delete blinky_;
-}
-
-bool Game::getSDLInitSuccess()
-{
-  return success_;
-}
-
-bool Game::run(Level *level)
-{
   /* Initialising game state. */
-
+  
   // rand() is only used for frightened ghosts.
-  srand((unsigned int)time(NULL));
+  if (success) srand((unsigned int)time(NULL));
   
   // Used by ghosts to find out how long to wait in current mode before switching.
-  modes_ = (int *)malloc(8 * sizeof(int));
-  if (modes_ == NULL) {
-    printf("Failed to allocate memory for list of mode switching times!\n");
-    return false;
-  }
-  modes_[0] = 7; modes_[1] = 20; // Wave 1. 7 seconds scatter, 20 seconds chase.
-  modes_[2] = 7; modes_[3] = 20; // Wave 2. 7 seconds scatter, 20 seconds chase.
-  modes_[4] = 5; modes_[5] = 20; // Wave 3. 5 seconds scatter, 20 seconds chase.
-  modes_[6] = 5; modes_[7] = -1; // Endless Wave. 7 seconds scatter, endless chase.
-  
-  // Initialise timer used to track when to mode switch.
-  timer_ = new Timer();
-  
-  // Walk through level text to build board and
-  // place actors at their starting positions.
-  boardHeight_ = level->getHeight();
-  boardWidth_ = level->getWidth();
-  std::string levelText = level->getLevelText();
-  board_ = (TileType **)malloc(boardWidth_ * sizeof(TileType *));
-  if (board_ == NULL) {
-    printf("Failed to allocate memory for board of tiles!\n");
-    return false;
-  }
-  for (int x = 0; x < boardWidth_; x++) {
-    board_[x] = (TileType *)malloc(boardHeight_ * sizeof(TileType));
-    if (board_[x] == NULL) {
-      printf("Failed to allocate memory for row of tiles!\n");
-      return false;
+  if (success) {
+    modes_ = (int *)malloc(8 * sizeof(int));
+    if (modes_ == NULL) {
+      printf("Failed to allocate memory for list of mode switching times!\n");
+      success = false;
     }
   }
-  for (int y = 0; y < boardHeight_; y++) {
+  if (success) {
+    modes_[0] = 7; modes_[1] = 20; // Wave 1. 7 seconds scatter, 20 seconds chase.
+    modes_[2] = 7; modes_[3] = 20; // Wave 2. 7 seconds scatter, 20 seconds chase.
+    modes_[4] = 5; modes_[5] = 20; // Wave 3. 5 seconds scatter, 20 seconds chase.
+    modes_[6] = 5; modes_[7] = -1; // Endless Wave. 7 seconds scatter, endless chase.
+  }
+  
+  // Initialise timer used to track when to mode switch.
+  if (success) timer_ = new Timer();
+  
+  // Get default level and allocate space for game board.
+  Level *level = new Level();
+  if (success) {
+    boardHeight_ = level->getHeight();
+    boardWidth_ = level->getWidth();
+    board_ = (TileType **)malloc(boardWidth_ * sizeof(TileType *));
+    if (board_ == NULL) {
+      printf("Failed to allocate memory for board of tiles!\n");
+      success = false;
+    }
+  }
+  if (success) {
+    for (int x = 0; x < boardWidth_; x++) {
+      board_[x] = (TileType *)malloc(boardHeight_ * sizeof(TileType));
+      if (board_[x] == NULL) {
+        printf("Failed to allocate memory for row of tiles!\n");
+        success = false;
+      }
+    }
+  }
+  
+  // Build game board.
+  if (success) for (int y = 0; y < boardHeight_; y++) {
+    std::string levelText = level->getLevelText();
     for (int x = 0; x < boardWidth_; x++) {
       char c = levelText.at(y * boardWidth_ + x);
       switch (c) {
@@ -212,6 +205,45 @@ bool Game::run(Level *level)
           break;
       }
     }
+  }
+  
+  // Free temp resource.
+  delete level;
+  
+  // Set to let caller know that initialisation succeeded.
+  success_ = success;
+  return;
+
+}
+
+Game::~Game()
+{
+  // For drawing.
+  if (window_ != NULL) SDL_DestroyWindow(window_);
+  if (renderer_ != NULL) SDL_DestroyRenderer(renderer_);
+  if (spritesheet_ != NULL) SDL_DestroyTexture(spritesheet_);
+  SDL_Quit();
+  
+  // For running simulation.
+  if (board_ != NULL) free(board_);
+  if (modes_ != NULL) free(modes_);
+  if (timer_ != NULL) delete timer_;
+  if (pacman_ != NULL) delete pacman_;
+  if (blinky_ != NULL) delete blinky_;
+  if (inky_ != NULL) delete inky_;
+  if (pinky_ != NULL) delete pinky_;
+  if (clyde_ != NULL) delete clyde_;
+}
+
+bool Game::getSuccess()
+{
+  return success_;
+}
+
+bool Game::run()
+{
+  if (getSuccess() == false) {
+    return false;
   }
   
   /* Run game loop. */

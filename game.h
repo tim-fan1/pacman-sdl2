@@ -5,7 +5,6 @@
 #include <SDL2_image/SDL_image.h>
 #include <SDL2_ttf/SDL_ttf.h>
 
-#include "level.h"
 #include "actor.h"
 #include "direction.h"
 #include "timer.h"
@@ -22,20 +21,16 @@ typedef enum {
 
 class Game {
   public:
-    /**
-     * Initialises SDL modules. Get SDL initialisation success through
-     * Game::getSDLInitSuccess().
-     */
+    // Initialise game with default level.
     Game();
     ~Game();
-    bool getSDLInitSuccess();
     
-    /**
-     * Start running game, initially rendering the given level.
-     *
-     * \Returns If game started running successfully.
-     */
-    bool run(Level *level);
+    // Return whether game initialisation succeeded.
+    bool getSuccess();
+
+    // Run the successfully initialised game.
+    // Return if game successfully ran and successfully exited.
+    bool run();
     
   private:
     void gameOver(bool isWin);
@@ -99,7 +94,7 @@ class Game {
      */
     bool drawSprite(SDL_Rect *clip, int x, int y, double angle = 0);
 
-    // SDL init success.
+    // Game initialisation success.
     bool success_;
     
     // For drawing our simulation to screen.
@@ -107,15 +102,25 @@ class Game {
     SDL_Renderer *renderer_;
     SDL_Texture *spritesheet_;
     
-    // For running our simulation.
+    // Data structures for running our simulation.
     TileType **board_;
-    int boardWidth_;
-    int boardHeight_;
     Actor *pacman_;
     Actor *blinky_;
     Actor *inky_;
     Actor *pinky_;
     Actor *clyde_;
+    Timer *timer_;
+    int *modes_;           // How long to stay in each mode:
+    int currentModeIndex_; // Even indices is Scatter mode,
+                           // Odd indices is Chase mode.
+                           
+    // Member variables for running our simulation.
+    bool currentMode_;     // The current mode all out-of-base alive
+                           // ghosts should be in on this frame.
+                           // false is Scatter mode,
+                           // true is Chase mode.
+    int boardWidth_;
+    int boardHeight_;
     int pellets_;
     int totalPellets_;
     bool isGameOver_;
@@ -124,15 +129,7 @@ class Game {
     int portalOneY;
     int portalTwoX;
     int portalTwoY;
-    Timer *timer_;
-    int *modes_;           // How long to stay in each mode:
-    int currentModeIndex_; // Even indices is Scatter mode,
-                           // Odd indices is Chase mode.
-    bool currentMode_;     // The current mode all out-of-base alive
-                           // ghosts should be in on this frame.
-                           // false is Scatter mode,
-                           // true is Chase mode.
-    
+
     // For animations.
     int pacmanAnimationFrame_;
     int pacmanAnimationFrameCounter_;
@@ -143,8 +140,6 @@ class Game {
     // How long each frame should take in ms.
     static const Uint32 FRAME_TIME = 16.7;
     static const Uint32 TILE_SIZE = 24;
-
-
 };
 
 #endif /* game_h */
