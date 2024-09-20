@@ -1030,8 +1030,8 @@ bool Game::update(Direction newDirection)
       // distance from PACMAN, where we then start running
       // away from PACMAN into our corner. PACMAN will be
       // very confused!!!
-      int clydeTileX = (clyde_->getX() + (TILE_SIZE / 2)) / TILE_SIZE;
-      int clydeTileY = (clyde_->getY() + (TILE_SIZE / 2)) / TILE_SIZE;
+      int clydeTileX = clyde_->getTileX();
+      int clydeTileY = clyde_->getTileY();
       int distanceFromPacman = (int)sqrt(pow(clydeTileX - pacmanTileX, 2) +
                                          pow(clydeTileY - pacmanTileY, 2));
       if (distanceFromPacman >= 8) {

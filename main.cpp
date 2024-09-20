@@ -15,10 +15,9 @@ int main(int argc, char *argv[])
   }
   
   // Run the game.
-  if (success) {
-    if (game->run() == false) {
-      printf("Error while running game... Check if the game has been successfully initialised!\n");
-    }
+  if (success && game->run() == false) {
+    printf("Error while running game... Check if the game has been successfully initialised!\n");
+    success = false;
   }
   
   // Game is over. Free resources.
