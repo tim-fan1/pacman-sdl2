@@ -1272,8 +1272,10 @@ void Game::drawWall(int x, int y)
     int aY = *arrayY[i];
     if ((aX < 0) || (aX > boardWidth_ - 1)) {
       (*arrayX[i]) = 0;
+      (*arrayY[i]) = 3;
     }
     if ((aY < 0) || (aY > boardHeight_ - 1)) {
+      (*arrayX[i]) = 0;
       (*arrayY[i]) = 3;
     }
   }
