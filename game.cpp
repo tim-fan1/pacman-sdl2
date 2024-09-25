@@ -31,6 +31,8 @@ Game::Game()
   currentModeIndex_ = 0;
   currentMode_ = false;
   frightenedGhostSprite_ = { .x = 0, .y = 0, .w = 48, .h = 48 };
+  numFramesPassed = 0;
+  averageFrameTime = 0;
 
   success_ = false;
   
@@ -348,6 +350,9 @@ bool Game::run()
     } else {
       printf("delay: %d\n", delay);
     }
+    averageFrameTime = ((numFramesPassed * averageFrameTime) + realFrameTime) / (numFramesPassed + 1);
+    numFramesPassed++;
+    printf("average frame time: %lf\n", averageFrameTime);
     SDL_Delay(delay);
   }
   
