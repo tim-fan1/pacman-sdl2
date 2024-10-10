@@ -1,5 +1,9 @@
 ## Building a PACMAN clone with just SDL2 
 
+<p align="center">
+  <img width="600" src="https://github.com/user-attachments/assets/d4dddc69-3fd8-4d49-b7c9-221595afcca0" alt="Pacman clone gameplay"/>
+</p>
+
 SDL2 is a library of useful routines that provides C++ application developers easier access to the complicated hardware components inside computers. For example, using SDL2 provides C++ application developers:
 
 - Access to a computer's graphics processing chip, so that developers can easily create new application windows, and also easily draw graphics onto those windows,
@@ -7,10 +11,6 @@ SDL2 is a library of useful routines that provides C++ application developers ea
 - And also access to a computer's keyboard, so that developers can easily find out when keys are pressed on a player's keyboard and when they are let go.
 
 This PACMAN clone game uses mainly these two parts of the SDL2 library to run the game. 
-
-<p align="center">
-  <img width="600" src="https://github.com/user-attachments/assets/d4dddc69-3fd8-4d49-b7c9-221595afcca0" alt="Pacman clone gameplay"/>
-</p>
 
 ## Running the game
 
