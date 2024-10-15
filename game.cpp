@@ -480,6 +480,7 @@ bool Game::movePacmanForwardWithCollision()
               Actor *ghost = ghosts[i];
               if (ghost->getIsChase() || ghost->getIsScatter()) {
                 ghost->setIsFrightened();
+                frightenedGhostSprite_ = { .x = 0, .y = 0, .w = 48, .h = 48 };
                 ghost->turnAround();
               }
             }
