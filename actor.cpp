@@ -158,64 +158,14 @@ int Actor::getSpotInBaseY()
   return (inBaseTileY_ * tileSize_);
 }
 
-bool Actor::getIsFrightened()
+GHOST_STATE Actor::getState()
 {
-  return state_ == GHOST_FRIGHTENED;
+  return state_;
 }
 
-void Actor::setIsFrightened()
+void Actor::setState(GHOST_STATE state)
 {
-  state_ = GHOST_FRIGHTENED;
-}
-
-bool Actor::getIsEaten()
-{
-  return state_ == GHOST_EATEN;
-}
-
-void Actor::setIsEaten()
-{
-  state_ = GHOST_EATEN;
-}
-
-bool Actor::getIsFindingSpot()
-{
-  return state_ == GHOST_FINDING_SPOT;
-}
-
-void Actor::setIsFindingSpot()
-{
-  state_ = GHOST_FINDING_SPOT;
-}
-
-bool Actor::getIsFindingExit()
-{
-  return state_ == GHOST_FINDING_EXIT;
-}
-
-void Actor::setIsFindingExit()
-{
-  state_ = GHOST_FINDING_EXIT;
-}
-
-bool Actor::getIsChase()
-{
-  return state_ == GHOST_CHASE;
-}
-
-void Actor::setIsChase()
-{
-  state_ = GHOST_CHASE;
-}
-
-bool Actor::getIsScatter()
-{
-  return state_ == GHOST_SCATTER;
-}
-
-void Actor::setIsScatter()
-{
-  state_ = GHOST_SCATTER;
+  state_ = state;
 }
 
 int Actor::getPower()
@@ -258,17 +208,17 @@ void Actor::printState()
 {
   if (state_ == GHOST_NONE) {
     printf("none\n");
-  } else if (getIsChase()) {
+  } else if (state_ == GHOST_CHASE) {
     printf("chase\n");
-  } else if (getIsScatter()) {
+  } else if (state_ == GHOST_SCATTER) {
     printf("scatter\n");
-  } else if (getIsFrightened()) {
+  } else if (state_ == GHOST_FRIGHTENED) {
     printf("frightened\n");
-  } else if (getIsEaten()) {
+  } else if (state_ == GHOST_EATEN) {
     printf("eaten\n");
-  } else if (getIsFindingExit()) {
+  } else if (state_ == GHOST_FINDING_EXIT) {
     printf("exit\n");
-  } else if (getIsFindingSpot()) {
+  } else if (state_ == GHOST_FINDING_SPOT) {
     printf("spot\n");
   }
 }

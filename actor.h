@@ -73,25 +73,8 @@ class Actor {
     // The four main states.
     void printState();
     
-    bool getIsChase();
-    void setIsChase();
-    
-    bool getIsScatter();
-    void setIsScatter();
-    
-    bool getIsEaten();
-    void setIsEaten();
-    
-    bool getIsFrightened();
-    void setIsFrightened();
-    
-    // Entering home.
-    bool getIsFindingSpot();
-    void setIsFindingSpot();
-    
-    // Leaving home.
-    bool getIsFindingExit();
-    void setIsFindingExit();
+    GHOST_STATE getState();
+    void setState(GHOST_STATE state);
     
     // At start of game, how long to wait until start to leave home.
     int getWaitingPellets();
